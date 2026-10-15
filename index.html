@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>断 · 舍 · 离 | 电影级四幕叙事 3D VIBE 视觉大赏</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400;700;900&family=Noto+Serif+SC:wght@200;300;600&family=Syne:wght@400;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       0. 胶片宽银幕重置 (Anamorphic Cinema 2.39:1)
+       ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
+      font-family: 'Syne', 'Noto Serif SC', sans-serif;
+      color: #ffffff;
+      cursor: crosshair;
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
+
+    /* 宽银幕电影上下遮幅 (Anamorphic Letterbox) */
+    .cinema-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cinema-bar-top, .cinema-bar-bottom {
+      width: 100%;
+      height: 8vh;
+      background: #000000;
+      transition: height 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* 变形镜头横向眩光 */
+    .anamorphic-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 12;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0, 240, 255, 0.02) 50%, rgba(0,0,0,0) 100%);
+      mix-blend-mode: screen;
+    }
+
+    /* 闪光冲击波覆层 */
+    .screen-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 25;
+      background: radial-gradient(circle at center, #ffffff 0%, #a6f4ff 35%, #001525 75%, #000000 100%);
+      opacity: 0;
+      mix-blend-mode: screen;
+      transition: opacity 0.06s ease-out;
+    }
+
+    /* ============================================================
+       1. 电影级自然叙事字幕 (Cinematic Natural Subtitles - Understated)
+       自然融入画面黄金下三分之一，温润雅致，绝不喧宾夺主
+       ============================================================ */
+    .narrative-layer, .hud-layer, .cinema-frame {
+      display: none !important;
+    }
+
+    .narrative-layer {
+      position: absolute;
+      bottom: 12.5vh;
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      z-index: 22;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 32px;
+    }
+
+    /* 无沉重黑框与刺眼边框，让文字如电影字幕般纯净自然浮现 */
+    .narrative-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background: transparent;
+      padding: 6px 20px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .narrative-layer.active .narrative-card {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .act-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.5em;
+      text-indent: 0.5em;
+      color: rgba(0, 240, 255, 0.75);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    .act-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 26px; /* 优雅舒展的电影字幕尺寸，克制温润 */
+      font-weight: 400; /* 中和字重，不单薄亦不喧宾夺主 */
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 0, 0, 0.85);
+      margin-bottom: 6px;
+    }
+
+    .act-desc {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-indent: 0.35em;
+      color: rgba(255, 255, 255, 0.75);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    /* ============================================================
+       2. 极简极奢 HUD (Cybernetic Zen HUD - Subtle & Balanced)
+       ============================================================ */
+    .hud-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 21;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10vh 5vw;
+      opacity: 0;
+      transition: opacity 1.8s ease;
+    }
+
+    .hud-layer.visible {
+      opacity: 1;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.9);
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+
+    .brand-orb {
+      width: 6px;
+      height: 6px;
+      background: #00f0ff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00f0ff;
+      animation: pulse-orb 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-orb {
+      0%, 100% { transform: scale(0.9); opacity: 0.5; box-shadow: 0 0 6px #00f0ff; }
+      50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 16px #00f0ff; }
+    }
+
+    #hud-pipeline-status {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.18);
+      color: rgba(0, 240, 255, 0.85);
+      font-size: 10px;
+      font-weight: 600;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    }
+
+    .stage-indicator {
+      display: flex;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .stage-dot {
+      width: 24px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      position: relative;
+      transition: all 0.4s ease;
+    }
+    .stage-dot.passed {
+      background: rgba(0, 240, 255, 0.4);
+    }
+    .stage-dot.current {
+      background: #00f0ff;
+      box-shadow: 0 0 10px #00f0ff;
+    }
+
+    .hud-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hud-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .hud-prose {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 12px;
+      letter-spacing: 0.3em;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 400;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .hud-timecode {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: #00f0ff;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+    }
+
+    /* 丝滑微光流金进度轴 */
+    .timeline-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timeline-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.3), #00f0ff 65%, #ffaa22 90%, #ffffff 100%);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.9);
+      transition: width 0.04s linear;
+    }
+
+    /* ============================================================
+       3. 启幕典藏界面 (Haute Couture Entry Screen)
+       ============================================================ */
+    .portal-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+      transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.8s;
+    }
+
+    .portal-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .portal-box {
+      text-align: center;
+      padding: 0 32px;
+    }
+
+    .portal-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.85em;
+      text-indent: 0.85em;
+      color: #00f0ff;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 10px #000000, 0 0 20px rgba(0, 240, 255, 0.8);
+    }
+
+    .portal-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 78px;
+      font-weight: 700; /* 加粗字重，防止背光吃字 */
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      color: #ffffff;
+      text-shadow: 0 4px 16px #000000, 0 0 50px rgba(0, 240, 255, 0.5);
+      margin-bottom: 24px;
+    }
+
+    .portal-quote {
+      font-size: 15px;
+      letter-spacing: 0.4em;
+      text-indent: 0.4em;
+      color: #f1f5f9;
+      margin-bottom: 52px;
+      font-weight: 500;
+      text-shadow: 0 2px 8px #000000;
+    }
+
+    .btn-portal {
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 20px 64px;
+      color: #ffffff;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-portal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.35), transparent);
+      transition: left 0.8s ease;
+    }
+
+    .btn-portal:hover {
+      border-color: #00f0ff;
+      color: #00f0ff;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.45);
+      background: rgba(0, 240, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .portal-btn-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-export-4k {
+      position: relative;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      padding: 20px 38px;
+      color: #00f0ff;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+    }
+
+    .btn-export-4k:hover {
+      background: rgba(0, 240, 255, 0.22);
+      border-color: #ffffff;
+      color: #ffffff;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* 4K 录制进行中顶部指示胶囊 */
+    .rec-banner {
+      position: fixed;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 99;
+      background: rgba(8, 10, 16, 0.92);
+      border: 1px solid rgba(255, 60, 60, 0.6);
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: 0.2em;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 30px rgba(255, 0, 0, 0.35);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .rec-banner.active {
+      display: flex;
+    }
+
+    .rec-dot {
+      width: 10px;
+      height: 10px;
+      background: #ff3333;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #ff3333;
+      animation: rec-blink 1s infinite alternate;
+    }
+
+    @keyframes rec-blink {
+      from { opacity: 0.3; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1.2); }
+    }
+
+    .portal-status {
+      margin-top: 36px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ============================================================
+       4. 终极落幕屏 (The Epilogue)
+       ============================================================ */
+    .epilogue-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 2.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 2.8s;
+    }
+
+    .epilogue-layer.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .epilogue-content {
+      text-align: center;
+      max-width: 680px;
+      padding: 0 32px;
+    }
+
+    .epilogue-zen {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 86px;
+      font-weight: 700; /* 加粗字重 */
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      color: #ffffff;
+      text-shadow: 0 4px 20px #000000, 0 0 60px rgba(0, 240, 255, 0.6);
+      margin-bottom: 30px;
+    }
+
+    .epilogue-text {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 17px;
+      line-height: 2.5;
+      letter-spacing: 0.35em;
+      color: #ffffff;
+      margin-bottom: 52px;
+      font-weight: 500;
+      text-shadow: 0 2px 10px #000000;
+    }
+
+    .btn-restart {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 16px 48px;
+      color: rgba(255, 255, 255, 0.85);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      cursor: pointer;
+      transition: all 0.4s ease;
+    }
+
+    .btn-restart:hover {
+      border-color: #00f0ff;
+      color: #00f0ff;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.35);
+    }
+  </style>
+
+  <!-- ============================================================
+       CDN 模块导入映射 (Three.js & JSM)
+       ============================================================ */ -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- WebGL 宿主画布 -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- 宽银幕电影上下遮幅 -->
+  <div class="cinema-frame">
+    <div class="cinema-bar-top"></div>
+    <div class="cinema-bar-bottom"></div>
+  </div>
+
+  <!-- 变形镜头横向眩光覆层 -->
+  <div class="anamorphic-overlay"></div>
+
+  <!-- 爆发瞬间全屏白耀冲击 -->
+  <div class="screen-flash" id="screen-flash"></div>
+
+  <!-- 4K 录制进行中提示胶囊 -->
+  <div class="rec-banner" id="rec-banner">
+    <span class="rec-dot"></span>
+    <span id="rec-status-text">REC 4K UHD (3840×2160) · 正在渲染录制中 (请勿切换标签)...</span>
+  </div>
+
+  <!-- 电影章节叙事字幕 -->
+  <div class="narrative-layer" id="narrative-layer">
+    <div class="narrative-card">
+      <div class="act-tag" id="act-tag">ACT I · THE COCOON</div>
+      <div class="act-title" id="act-title">执 · 囚 笼</div>
+      <div class="act-desc" id="act-desc">万物附骨 · 禁锢重压 · 窒息坍缩</div>
+    </div>
+  </div>
+
+  <!-- 极奢 HUD 界面 -->
+  <div class="hud-layer" id="hud-layer">
+    <div class="hud-header">
+      <div class="brand-mark">
+        <span class="brand-orb"></span>
+        <span>DAN-SHA-RI // 4-ACT SUITE</span>
+      </div>
+      <div class="stage-indicator">
+        <div class="stage-dot current" id="dot-0"></div>
+        <div class="stage-dot" id="dot-1"></div>
+        <div class="stage-dot" id="dot-2"></div>
+        <div class="stage-dot" id="dot-3"></div>
+      </div>
+      <div id="hud-pipeline-status">PIPELINE: ACTIVE</div>
+    </div>
+    
+    <div class="hud-footer">
+      <div class="hud-meta-row">
+        <div class="hud-prose" id="hud-prose">执念如囚 · 杂质繁冗 · 压制神明</div>
+        <div class="hud-timecode" id="hud-timecode">00.00 / 30.00</div>
+      </div>
+      <div class="timeline-track">
+        <div class="timeline-bar" id="timeline-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 启幕典藏界面 -->
+  <div class="portal-screen" id="portal-screen">
+    <div class="portal-box">
+      <div class="portal-subtitle">A CINEMATIC 4-ACT WEB3D ODYSSEY</div>
+      <div class="portal-title">断 · 舍 · 离</div>
+      <div class="portal-quote">从囚笼爆裂到曼陀罗重构 · 30秒四幕升华</div>
+      <div class="portal-btn-group">
+        <button class="btn-portal" id="btn-portal">BEGIN TRANSCENDENCE / 启幕体验</button>
+        <button class="btn-export-4k" id="btn-export-4k">🎥 导出 4K 视频 (3840×2160)</button>
+      </div>
+      <div class="portal-status" id="portal-status">INITIALIZING HIGH-PRECISION RENDER PIPELINE...</div>
+    </div>
+  </div>
+
+  <!-- 终极落幕屏 -->
+  <div class="epilogue-layer" id="epilogue-layer">
+    <div class="epilogue-content">
+      <div class="epilogue-zen">太 · 虚</div>
+      <div class="epilogue-text">
+        断绝不必要的羁绊<br>
+        舍弃深重的执念与妄想<br>
+        脱离对万物所有权的执着<br>
+        天地澄明 · 归于太虚
+      </div>
+      <div class="portal-btn-group">
+        <button class="btn-restart" id="btn-restart">REPLAY / 再次领悟</button>
+        <button class="btn-export-4k" id="btn-export-4k-end">🎥 导出 4K 超清视频</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       核心 Web3D & 四幕电影叙事架构
+       ============================================================ */ -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+    /* ------------------------------------------------------------
+       1. 拒绝凑时间：严格四幕式进阶导演时间轴 (4-Act Suite Timeline)
+       0.0s~7.8s   第一幕【执·囚笼】：暗黑外壳禁锢，引力压迫心跳
+       7.8s~8.0s   真空死寂：抽干声音制造极致悬念
+       8.0s~13.0s  第二幕【断·爆裂】：超新星炸裂，外壳粉碎，内核首次破茧惊艳曝光
+       13.0s~21.0s 第三幕【舍·重构】：碎片非漫无目的飘浮，而是自组织重组为天体曼陀罗星环！
+       21.0s~27.0s 第四幕【离·升华】：物质升华为向上光瀑垂直消融，物我两忘
+       27.0s~30.0s 尾声【归零】：纯净深空微星闪烁，静心落幕
+       ------------------------------------------------------------ */
+    const TIMELINE = {
+      TOTAL: 30.0,
+      ACT1_END: 7.82,       // 7.82s 瞬间陷入真空死寂
+      ACT2_START: 8.00,     // 8.00s 囚笼粉碎爆发，内核破茧
+      ACT3_START: 13.00,    // 13.00s 碎屑受引力秩序重组为曼陀罗双环！
+      ACT4_START: 21.00,    // 21.00s 物质升华消融成上升光瀑！
+      FADEOUT: 27.20        // 27.20s 归于静虚
+    };
+    window.TIMELINE = TIMELINE;
+
+    let isPlaying = false;
+    let startTime = 0;
+    let burstTriggered = false;
+    let reorgTriggered = false;
+    let dissolveTriggered = false;
+    let preDropTriggered = false;
+
+    // DOM 元素引用
+    const canvas = document.getElementById('webgl-canvas');
+    const portalScreen = document.getElementById('portal-screen');
+    const hudLayer = document.getElementById('hud-layer');
+    const epilogueLayer = document.getElementById('epilogue-layer');
+    const screenFlash = document.getElementById('screen-flash');
+    const narrativeLayer = document.getElementById('narrative-layer');
+    const actTag = document.getElementById('act-tag');
+    const actTitle = document.getElementById('act-title');
+    const actDesc = document.getElementById('act-desc');
+    const btnPortal = document.getElementById('btn-portal');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnExport4k = document.getElementById('btn-export-4k');
+    const btnExport4kEnd = document.getElementById('btn-export-4k-end');
+    const hudTimecode = document.getElementById('hud-timecode');
+    const timelineBar = document.getElementById('timeline-bar');
+    const portalStatus = document.getElementById('portal-status');
+    const hudPipelineStatus = document.getElementById('hud-pipeline-status');
+    const hudProse = document.getElementById('hud-prose');
+    const stageDots = [
+      document.getElementById('dot-0'),
+      document.getElementById('dot-1'),
+      document.getElementById('dot-2'),
+      document.getElementById('dot-3')
+    ];
+
+    function updateStageDots(currentIdx) {
+      stageDots.forEach((dot, idx) => {
+        dot.className = 'stage-dot';
+        if (idx < currentIdx) dot.classList.add('passed');
+        if (idx === currentIdx) dot.classList.add('current');
+      });
+    }
+
+    // 鼠标平滑交互视差追踪 (Smooth Mouse Parallax)
+    const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    window.addEventListener('mousemove', (e) => {
+      mouse.targetX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    /* ------------------------------------------------------------
+       2. 四幕式动态声音设计系统 (Dynamic 4-Act Audio Suite)
+       ------------------------------------------------------------ */
+    /* ------------------------------------------------------------
+       2. 极简温暖东方禅意声音系统 (Warm Organic Zen Audio Suite)
+       彻底消除高频数字毛刺与尖锐啸叫，纯粹保留深沉低频与古刹温润铜磬
+       ------------------------------------------------------------ */
+    class NarrativeAudioDirector {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.warmFilter = null;
+        this.droneGain = null;
+        this.droneFilter = null;
+        this.tensionOsc = null;
+        this.tensionGain = null;
+        this.recGain = null;
+        this.mediaDest = null;
+        this.isReady = false;
+      }
+
+      async init() {
+        if (!this.ctx || this.ctx.state === 'closed') {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+
+          // 核心温暖低通滤波器：温润削减 1200Hz 以上所有尖锐数字刺耳高频！
+          this.warmFilter = this.ctx.createBiquadFilter();
+          this.warmFilter.type = 'lowpass';
+          this.warmFilter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+          this.warmFilter.Q.setValueAtTime(0.5, this.ctx.currentTime);
+
+          // 柔和防爆音温和压限 (用于扬声器/耳机)
+          const limiter = this.ctx.createDynamicsCompressor();
+          limiter.threshold.setValueAtTime(-10.0, this.ctx.currentTime);
+          limiter.knee.setValueAtTime(24, this.ctx.currentTime);
+          limiter.ratio.setValueAtTime(8, this.ctx.currentTime);
+          limiter.attack.setValueAtTime(0.005, this.ctx.currentTime);
+          limiter.release.setValueAtTime(0.25, this.ctx.currentTime);
+
+          // 舒适主音量
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.setValueAtTime(0.72, this.ctx.currentTime);
+
+          this.masterGain.connect(this.warmFilter);
+          this.warmFilter.connect(limiter);
+
+          // 1. 输出到系统扬声器/耳机
+          limiter.connect(this.ctx.destination);
+
+          // 2. 专用 4K 视频录音总线：直接从 warmFilter 取音，带 1.25x 丰满电平，彻底防止压缩器截断或静音
+          this.recGain = this.ctx.createGain();
+          this.recGain.gain.setValueAtTime(1.25, this.ctx.currentTime);
+          this.warmFilter.connect(this.recGain);
+
+          this.mediaDest = this.ctx.createMediaStreamDestination();
+          this.recGain.connect(this.mediaDest);
+        }
+
+        if (this.ctx.state === 'suspended') {
+          await this.ctx.resume();
+        }
+        this.isReady = true;
+      }
+
+      // 第一幕：温润深邃的暗黑低频呼吸与沉着心跳
+      startAct1() {
+        const now = this.ctx.currentTime;
+
+        this.droneGain = this.ctx.createGain();
+        this.droneGain.gain.setValueAtTime(0.08, now); // 初始立刻有温润低频基础，确保录音音轨不为空
+        this.droneGain.gain.exponentialRampToValueAtTime(0.52, now + 3.0);
+
+        this.droneFilter = this.ctx.createBiquadFilter();
+        this.droneFilter.type = 'lowpass';
+        this.droneFilter.frequency.setValueAtTime(85, now);
+        this.droneFilter.Q.setValueAtTime(2.0, now);
+
+        // 纯净暖正弦与极弱双三角波 (F1: 43.65Hz / C2: 65.4Hz)
+        [43.65, 65.40, 87.30].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = idx === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(idx === 0 ? 0.35 : 0.10, now);
+          osc.connect(g);
+          g.connect(this.droneFilter);
+          osc.start(now);
+        });
+
+        // 告别刺耳升音！改为地下深层地质般的次声波蠕动 (Sub-bass rumble: 32Hz -> 54Hz)
+        this.tensionOsc = this.ctx.createOscillator();
+        this.tensionGain = this.ctx.createGain();
+        this.tensionOsc.type = 'sine';
+        this.tensionOsc.frequency.setValueAtTime(32, now);
+        this.tensionOsc.frequency.exponentialRampToValueAtTime(54, now + TIMELINE.ACT1_END);
+
+        this.tensionGain.gain.setValueAtTime(0.001, now);
+        this.tensionGain.gain.exponentialRampToValueAtTime(0.12, now + TIMELINE.ACT1_END);
+
+        this.tensionOsc.connect(this.tensionGain);
+        this.tensionGain.connect(this.masterGain);
+        this.tensionOsc.start(now);
+
+        this.droneFilter.connect(this.droneGain);
+        this.droneGain.connect(this.masterGain);
+
+        // 沉静温厚的低频心跳脉动
+        [3.8, 5.2, 6.4, 7.2].forEach((t, i) => {
+          setTimeout(() => {
+            this.playWarmThump(i);
+          }, t * 1000);
+        });
+      }
+
+      playWarmThump(idx) {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(55 + idx * 8, now);
+        osc.frequency.exponentialRampToValueAtTime(24, now + 0.4);
+
+        g.gain.setValueAtTime(0.24 + idx * 0.08, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        osc.connect(g);
+        g.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.42);
+      }
+
+      // 7.82s 瞬间自然抽干真空
+      triggerVacuumSilence() {
+        if (!this.masterGain) return;
+        const now = this.ctx.currentTime;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+        this.masterGain.gain.linearRampToValueAtTime(0.00001, now + 0.035);
+      }
+
+      // 第二幕：8.00s 醇厚下潜次声波 + 藏传古寺温润铜磬 (无任何刺耳高频)
+      triggerAct2Detonation() {
+        const now = this.ctx.currentTime;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(0.75, now);
+
+        // 醇厚低频冲击波 (115Hz -> 26Hz 柔和下潜)
+        const subOsc = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(115, now);
+        subOsc.frequency.exponentialRampToValueAtTime(26, now + 1.8);
+        subGain.gain.setValueAtTime(0.75, now);
+        subGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
+        subOsc.connect(subGain);
+        subGain.connect(this.masterGain);
+        subOsc.start(now);
+        subOsc.stop(now + 3.1);
+
+        // 温暖殿堂空间混响 (低通滤波 500Hz，过滤金属毛刺)
+        const dL = this.ctx.createDelay();
+        const dR = this.ctx.createDelay();
+        dL.delayTime.setValueAtTime(0.36, now);
+        dR.delayTime.setValueAtTime(0.54, now);
+        const fbL = this.ctx.createGain();
+        const fbR = this.ctx.createGain();
+        fbL.gain.setValueAtTime(0.42, now);
+        fbR.gain.setValueAtTime(0.42, now);
+        const dF = this.ctx.createBiquadFilter();
+        dF.type = 'lowpass';
+        dF.frequency.setValueAtTime(500, now); // 极柔和温暖的残响滤波
+
+        dL.connect(fbL); fbL.connect(dF); dF.connect(dL);
+        dR.connect(fbR); fbR.connect(dF); dF.connect(dR);
+        dL.connect(this.masterGain);
+        dR.connect(this.masterGain);
+
+        // 真实青铜磬的温润谐波 (以 196Hz G3 为基频，最高不超过 784Hz，绝对不刺耳)
+        const bowlModes = [
+          { f: 196.0, decay: 11.0, gain: 0.65 }, // G3 醇厚青铜基音
+          { f: 392.0, decay: 8.5,  gain: 0.28 }, // G4 柔和八度
+          { f: 588.0, decay: 6.0,  gain: 0.12 }, // D5 纯五度
+          { f: 784.0, decay: 3.5,  gain: 0.03 }  // G5 微弱泛音
+        ];
+
+        bowlModes.forEach(m => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(m.f, now);
+
+          // 磬壁极其细微的自然呼吸颤音
+          const vib = this.ctx.createOscillator();
+          const vibG = this.ctx.createGain();
+          vib.frequency.setValueAtTime(2.8, now);
+          vibG.gain.setValueAtTime(1.2, now);
+          vib.connect(vibG);
+          vibG.connect(osc.frequency);
+          vib.start(now);
+
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(m.gain, now + 0.008);
+          g.gain.exponentialRampToValueAtTime(0.00001, now + m.decay);
+
+          osc.connect(g);
+          g.connect(this.masterGain);
+          g.connect(dL);
+          g.connect(dR);
+
+          osc.start(now);
+          osc.stop(now + m.decay + 0.3);
+          vib.stop(now + m.decay + 0.3);
+        });
+      }
+
+      // 第三幕：13.00s 天体星环重构 · 温润木石水滴般空灵五音
+      triggerAct3Reorganization() {
+        const now = this.ctx.currentTime;
+        // 柔和的中低频五声音阶 (G3, A3, C4, D4, E4，彻底远离 1000Hz+ 高频啸叫)
+        const notes = [196.00, 220.00, 261.63, 293.66, 329.63];
+        notes.forEach((freq, i) => {
+          const t = now + i * 0.24;
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(0.12, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 3.8);
+
+          osc.connect(g);
+          g.connect(this.masterGain);
+          osc.start(t);
+          osc.stop(t + 4.0);
+        });
+      }
+
+      // 第四幕：21.00s 升华归虚 · 悠远禅钟与微风余韵 (彻底剔除尖锐刺耳银铃)
+      triggerAct4Dissolution() {
+        const now = this.ctx.currentTime;
+        // 悠长深沉的青铜古钟基频 (146.8 Hz / D3)
+        const bell = this.ctx.createOscillator();
+        const bellG = this.ctx.createGain();
+        bell.type = 'sine';
+        bell.frequency.setValueAtTime(146.83, now);
+        bellG.gain.setValueAtTime(0.35, now);
+        bellG.gain.exponentialRampToValueAtTime(0.0001, now + 8.5);
+        bell.connect(bellG);
+        bellG.connect(this.masterGain);
+        bell.start(now);
+        bell.stop(now + 8.6);
+
+        // 温暖的深空和弦衬垫 (D3 + A3 + D4 纯五度与八度，极其舒缓安宁)
+        [146.83, 220.00, 293.66].forEach(f => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(0.06, now + 1.2);
+          g.gain.exponentialRampToValueAtTime(0.00001, now + 7.5);
+          osc.connect(g);
+          g.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 7.6);
+        });
+      }
+
+      getAudioStream() {
+        if (!this.mediaDest) {
+          throw new Error("NarrativeAudioDirector not initialized. Please call await audioDirector.init() first.");
+        }
+        return this.mediaDest.stream;
+      }
+
+      fadeOut() {
+        if (!this.masterGain) return;
+        const now = this.ctx.currentTime;
+        this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+        this.masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+      }
+    }
+
+    const audioDirector = new NarrativeAudioDirector();
+
+    /* ------------------------------------------------------------
+       3. 顶配电影级渲染引擎架构 (Three.js WebGL Architecture)
+       ------------------------------------------------------------ */
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+    scene.fog = new THREE.FogExp2(0x000000, 0.032);
+
+    const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 160);
+    camera.position.set(0, 0.6, 15.0);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      powerPreference: "high-performance",
+      precision: "highp"
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    /* ------------------------------------------------------------
+       4. 摄影棚级 HDR 环境贴图 (Procedural Studio IBL)
+       ------------------------------------------------------------ */
+    function createProceduralStudioIBL() {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+
+      const cvs = document.createElement('canvas');
+      cvs.width = 1024;
+      cvs.height = 512;
+      const ctx = cvs.getContext('2d');
+
+      ctx.fillStyle = '#010204';
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // 顶部柔白光幕
+      const gradTop = ctx.createLinearGradient(0, 0, 0, 240);
+      gradTop.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      gradTop.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradTop;
+      ctx.fillRect(80, 0, 864, 240);
+
+      // 左侧青蓝霓虹
+      const gradCyan = ctx.createRadialGradient(180, 256, 10, 180, 256, 220);
+      gradCyan.addColorStop(0, 'rgba(0, 240, 255, 1.0)');
+      gradCyan.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradCyan;
+      ctx.fillRect(0, 40, 420, 432);
+
+      // 右侧金缮温暖金辉
+      const gradGold = ctx.createRadialGradient(860, 256, 10, 860, 256, 200);
+      gradGold.addColorStop(0, 'rgba(255, 175, 50, 0.95)');
+      gradGold.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradGold;
+      ctx.fillRect(660, 40, 364, 432);
+
+      const tex = new THREE.CanvasTexture(cvs);
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      const envMap = pmrem.fromEquirectangular(tex).texture;
+      scene.environment = envMap;
+      pmrem.dispose();
+    }
+    createProceduralStudioIBL();
+
+    /* ------------------------------------------------------------
+       5. 电影后期调色与色散通道 (Bloom & Film Grain)
+       ------------------------------------------------------------ */
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      2.0,  // 强度
+      0.60, // 半径
+      0.15  // 阈值
+    );
+    composer.addPass(bloomPass);
+
+    const CinematicGrainShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        uTime: { value: 0 },
+        uChromatic: { value: 0.003 },
+        uGrain: { value: 0.06 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uTime;
+        uniform float uChromatic;
+        uniform float uGrain;
+        varying vec2 vUv;
+
+        float rand(vec2 p) {
+          return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        void main() {
+          vec2 uv = vUv;
+          vec2 dir = uv - 0.5;
+          float dist = length(dir);
+
+          vec2 offset = dir * dist * uChromatic;
+          float r = texture2D(tDiffuse, uv - offset).r;
+          float g = texture2D(tDiffuse, uv).g;
+          float b = texture2D(tDiffuse, uv + offset).b;
+          vec3 col = vec3(r, g, b);
+
+          float grain = (rand(uv + sin(uTime * 25.0)) - 0.5) * uGrain;
+          col += grain;
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    };
+
+    const cinematicPass = new ShaderPass(CinematicGrainShader);
+    composer.addPass(cinematicPass);
+
+    /* ------------------------------------------------------------
+       6. 核心光影矩阵 (Cinematic Lights)
+       ------------------------------------------------------------ */
+    const corePointLight = new THREE.PointLight(0x00f0ff, 6.0, 35, 1.8);
+    corePointLight.position.set(0, 0, 0);
+    scene.add(corePointLight);
+
+    const rimKeyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+    rimKeyLight.position.set(-10, 14, -8);
+    scene.add(rimKeyLight);
+
+    const goldFillLight = new THREE.DirectionalLight(0xffaa33, 1.6);
+    goldFillLight.position.set(12, -8, 6);
+    scene.add(goldFillLight);
+
+    /* ------------------------------------------------------------
+       7. 激波环与升华光瀑 (Shockwaves & Ascending Light River)
+       ------------------------------------------------------------ */
+    const shockwaveGeo = new THREE.RingGeometry(0.1, 0.45, 64);
+    const shockwaveMat1 = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+    const shockwaveMesh1 = new THREE.Mesh(shockwaveGeo, shockwaveMat1);
+    shockwaveMesh1.rotation.x = Math.PI / 2;
+    scene.add(shockwaveMesh1);
+
+    const shockwaveMat2 = new THREE.MeshBasicMaterial({
+      color: 0xffaa22,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+    const shockwaveMesh2 = new THREE.Mesh(shockwaveGeo, shockwaveMat2);
+    shockwaveMesh2.rotation.x = Math.PI / 2 + 0.15;
+    scene.add(shockwaveMesh2);
+
+    // 第四幕垂直上升光瀑流 (Ascending Light Pillars)
+    const pillarCount = 48;
+    const pillarGeo = new THREE.CylinderGeometry(0.015, 0.015, 8.0, 8);
+    const pillarMat = new THREE.MeshBasicMaterial({
+      color: 0x88f5ff,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const lightRiverGroup = new THREE.Group();
+    const pillarList = [];
+
+    for (let i = 0; i < pillarCount; i++) {
+      const p = new THREE.Mesh(pillarGeo, pillarMat.clone());
+      const r = 0.5 + Math.random() * 5.0;
+      const th = Math.random() * Math.PI * 2;
+      p.position.set(Math.cos(th) * r, -10 + Math.random() * 20, Math.sin(th) * r);
+      p.userData = { speed: 0.08 + Math.random() * 0.12, initialY: p.position.y };
+      pillarList.push(p);
+      lightRiverGroup.add(p);
+    }
+    scene.add(lightRiverGroup);
+
+    /* ------------------------------------------------------------
+       8. 3,500 颗粒子动力学 (0~8s 旋涡坍缩 / 8s 爆裂 / 21s 垂直光雨)
+       ------------------------------------------------------------ */
+    const particleCount = 3500;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleMeta = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2.0 + Math.random() * 9.0;
+      const height = (Math.random() - 0.5) * 1.8;
+
+      particlePositions[i * 3]     = Math.cos(angle) * radius;
+      particlePositions[i * 3 + 1] = height;
+      particlePositions[i * 3 + 2] = Math.sin(angle) * radius;
+
+      particleMeta.push({
+        radius: radius,
+        angle: angle,
+        speed: (0.8 + Math.random() * 1.5) / (radius + 0.1),
+        y: height,
+        burstVelocity: new THREE.Vector3(
+          (Math.random() - 0.5) * 16,
+          (Math.random() - 0.5) * 14,
+          (Math.random() - 0.5) * 16
+        )
+      });
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0x88eeff,
+      size: 0.055,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
+    });
+    const particleSystem = new THREE.Points(particleGeo, particleMat);
+    scene.add(particleSystem);
+
+    /* ------------------------------------------------------------
+       9. 四幕具象核心资产体系 (4-Act Architectural Assets)
+       A. 第一幕：暗黑晶格闭锁外壳 (The Obsidian Geodesic Cage)
+       B. 第二幕：破茧揭幕的【神圣莲花星核】(The Sacred Core)
+       C. 第三幕：280 块晶体受引力调控重构为【双环天体曼陀罗】
+       D. 第四幕：物质彻底消融升华
+       ------------------------------------------------------------ */
+    let mixer = null;
+    let gltfModel = null;
+    let fourActGroup = null;
+
+    // 结构子部件引用
+    let obsidianCageMesh = null;
+    let innerSacredCore = null;
+    let astrolabeRings = [];
+    let shards = [];
+
+    const gltfLoader = new GLTFLoader();
+
+    function enhanceBlenderPBR(obj) {
+      obj.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (child.material) {
+            child.material.envMapIntensity = 2.5;
+            if (child.material.emissive) {
+              const lum = child.material.emissive.r + child.material.emissive.g + child.material.emissive.b;
+              if (lum > 0.02) {
+                child.material.emissiveIntensity = 4.0;
+              }
+            }
+            child.material.roughness = Math.min(child.material.roughness ?? 0.15, 0.4);
+            child.material.metalness = Math.max(child.material.metalness ?? 0.85, 0.6);
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+    }
+
+    gltfLoader.load(
+      'zen_core.glb',
+      (gltf) => {
+        gltfModel = gltf.scene;
+        scene.add(gltfModel);
+        enhanceBlenderPBR(gltfModel);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(gltfModel);
+          gltf.animations.forEach(clip => {
+            const action = mixer.clipAction(clip);
+            action.setLoop(THREE.LoopRepeat);
+            action.play();
+          });
+        }
+
+        if (fourActGroup) {
+          scene.remove(fourActGroup);
+          fourActGroup = null;
+        }
+
+        portalStatus.textContent = 'BLENDER GLB ASSET MOUNTED SUCCESSFULLY';
+        portalStatus.style.color = '#00f0ff';
+        hudPipelineStatus.textContent = 'CORE: zen_core.glb (ACTIVE)';
+      },
+      () => {},
+      () => {
+        // 当暂无 GLB 时，启动四幕全流程电影级程序化资产
+        createFourActProceduralWorld();
+        portalStatus.textContent = '4-ACT NARRATIVE ARCHITECTURAL CORE ACTIVE';
+        hudPipelineStatus.textContent = 'CORE: 4-ACT KINETIC MANDALA';
+      }
+    );
+
+    function createFourActProceduralWorld() {
+      if (fourActGroup || gltfModel) return;
+      fourActGroup = new THREE.Group();
+
+      // ==========================================
+      // 第一幕资产：暗黑晶格闭锁外壳 (The Obsidian Geodesic Prison)
+      // 代表沉重、窒息、不可破的内心执念
+      // ==========================================
+      const cageGeo = new THREE.IcosahedronGeometry(1.65, 1);
+      const cageMat = new THREE.MeshStandardMaterial({
+        color: 0x050608,
+        wireframe: true,
+        roughness: 0.2,
+        metalness: 0.95,
+        emissive: new THREE.Color(0xff2200), // 第一幕透出危险暗红压抑警告
+        emissiveIntensity: 0.4,
+        envMapIntensity: 2.0
+      });
+      obsidianCageMesh = new THREE.Mesh(cageGeo, cageMat);
+      fourActGroup.add(obsidianCageMesh);
+
+      // ==========================================
+      // 第二幕资产：破茧初现的【神圣天体星核】(The Sacred Core)
+      // 第一幕被深藏，第二幕 8 秒才首次曝光于天地！
+      // ==========================================
+      innerSacredCore = new THREE.Group();
+      innerSacredCore.scale.set(0.001, 0.001, 0.001); // 初始藏于内部
+
+      const coreSphereGeo = new THREE.SphereGeometry(1.0, 64, 64);
+      const coreSphereMat = new THREE.MeshStandardMaterial({
+        color: 0x020814,
+        emissive: new THREE.Color(0x00f0ff),
+        emissiveIntensity: 5.0,
+        roughness: 0.05,
+        metalness: 0.95
+      });
+      const coreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
+      innerSacredCore.add(coreSphere);
+
+      const pureWhiteCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.75, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      coreSphere.add(pureWhiteCore);
+
+      // 金缮天球仪天环 (Astrolabe Celestial Rings)
+      const ringSpecs = [
+        { r: 1.55, w: 0.018, color: 0x00f0ff, rot: { x: 0.015, y: 0.012 } },
+        { r: 2.05, w: 0.015, color: 0xffaa22, rot: { x: -0.012, y: 0.018 } },
+        { r: 2.55, w: 0.014, color: 0xffffff, rot: { x: 0.018, y: -0.015 } }
+      ];
+
+      ringSpecs.forEach(spec => {
+        const rGeo = new THREE.TorusGeometry(spec.r, spec.w, 16, 120);
+        const rMat = new THREE.MeshStandardMaterial({
+          color: 0x111116,
+          metalness: 0.98,
+          roughness: 0.12,
+          emissive: new THREE.Color(spec.color),
+          emissiveIntensity: 1.5,
+          envMapIntensity: 3.0
+        });
+        const rMesh = new THREE.Mesh(rGeo, rMat);
+        rMesh.userData = spec.rot;
+        astrolabeRings.push(rMesh);
+        innerSacredCore.add(rMesh);
+      });
+
+      fourActGroup.add(innerSacredCore);
+
+      // ==========================================
+      // 第三幕/第二幕资产：260 块具有双重宿命的晶体
+      // 8s 爆裂；13s 重组成【双轨曼陀罗天体星环】；21s 升华消融！
+      // ==========================================
+      const shardCount = 260;
+      const dodecaGeo = new THREE.DodecahedronGeometry(0.22, 0);
+
+      // 高折射透光黑曜石
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0x06080d,
+        roughness: 0.08,
+        metalness: 0.15,
+        transmission: 0.88,
+        thickness: 1.6,
+        ior: 1.56,
+        envMapIntensity: 3.5
+      });
+
+      // 流金金缮裂纹
+      const goldMat = new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        emissive: new THREE.Color(0xffaa22),
+        emissiveIntensity: 3.2,
+        metalness: 0.95,
+        roughness: 0.15,
+        envMapIntensity: 2.5
+      });
+
+      for (let i = 0; i < shardCount; i++) {
+        const isGold = i % 5 === 0;
+        const shard = new THREE.Mesh(dodecaGeo, isGold ? goldMat.clone() : glassMat.clone());
+
+        // 初始第一幕位置：紧紧贴附在囚笼外壁 (牢不可破的物欲)
+        const phi = Math.acos(-1 + (2 * i) / shardCount);
+        const theta = Math.sqrt(shardCount * Math.PI) * phi;
+        const rInitial = 1.95 + Math.random() * 0.4;
+
+        const x = rInitial * Math.cos(theta) * Math.sin(phi);
+        const y = rInitial * Math.sin(theta) * Math.sin(phi);
+        const z = rInitial * Math.cos(phi);
+
+        shard.position.set(x, y, z);
+        shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+        const s = 0.5 + Math.random() * 0.8;
+        shard.scale.set(s, s * 1.4, s);
+
+        const dir = new THREE.Vector3(x, y, z).normalize();
+
+        // 计算第三幕【曼陀罗天体星环】的目标坐标与轨道
+        const ringTrack = i % 2; // 0 内环，1 外环
+        const ringR = ringTrack === 0 ? (3.2 + Math.random() * 0.6) : (5.2 + Math.random() * 0.8);
+        const ringAngle = (i / shardCount) * Math.PI * 4;
+
+        shard.userData = {
+          origin: new THREE.Vector3(x, y, z),
+          burstVel: dir.multiplyScalar(6.5 + Math.random() * 8.0),
+          tumble: new THREE.Vector3((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5),
+          mandalaRadius: ringR,
+          mandalaAngle: ringAngle,
+          mandalaSpeed: (ringTrack === 0 ? 0.015 : -0.010) * (0.8 + Math.random() * 0.4),
+          mandalaHeight: (Math.random() - 0.5) * 0.6,
+          // 记录当前爆发后的空间位置
+          currentBurstPos: new THREE.Vector3()
+        };
+
+        shards.push(shard);
+        fourActGroup.add(shard);
+      }
+
+      scene.add(fourActGroup);
+    }
+
+    /* ------------------------------------------------------------
+       10. 严格四幕叙事引擎 (Director 4-Act Orchestrator)
+       彻底解决“内容少、停留时长不合理、纯凑时间”的问题！
+       ------------------------------------------------------------ */
+    let cameraRecoil = 0;
+
+    function runNarrativeDirector(time) {
+      const progress = Math.min(time / TIMELINE.TOTAL, 1.0);
+      const displaySec = Math.min(time, 30.0).toFixed(2).padStart(5, '0');
+      hudTimecode.textContent = `${displaySec} / 30.00`;
+      timelineBar.style.width = `${progress * 100}%`;
+
+      // ============================================================
+      // 第一幕【执 · 囚笼】(0.0s ~ 7.82s) - 压迫、坍缩、窒息推镜
+      // ============================================================
+      if (time < TIMELINE.ACT1_END) {
+        updateStageDots(0);
+        const t = time / TIMELINE.ACT1_END;
+        // 缓慢逼近囚笼：由 z=15.0 推进至 z=7.5
+        camera.position.z = 15.0 - Math.pow(t, 1.8) * 7.5;
+        camera.position.y = 0.6 - t * 0.4;
+        camera.position.x = Math.sin(time * 0.4) * 0.4;
+
+        if (obsidianCageMesh) {
+          // 晶格随时间高频微颤，红光越发急促，象征即将破茧
+          obsidianCageMesh.rotation.y += 0.012 + t * 0.025;
+          obsidianCageMesh.rotation.x += 0.008 + t * 0.015;
+          obsidianCageMesh.material.emissiveIntensity = 0.4 + Math.sin(time * (4 + t * 10)) * (0.3 + t * 0.8);
+        }
+
+        // 光学色散轻微上升
+        cinematicPass.uniforms.uChromatic.value = 0.0025 + t * 0.005;
+        bloomPass.strength = 1.6 + Math.sin(time * 3.0) * 0.3;
+
+        if (time > 1.0 && time < 6.8) {
+          narrativeLayer.classList.add('active');
+          actTag.textContent = "ACT I · THE COCOON";
+          actTitle.textContent = "执 · 囚 笼";
+          actDesc.textContent = "万物附骨 · 禁锢重压 · 窒息坍缩";
+          hudProse.textContent = "执念如囚 · 杂质繁冗 · 压制神明";
+        } else {
+          narrativeLayer.classList.remove('active');
+        }
+      }
+
+      // ============================================================
+      // 7.82s ~ 8.00s 真空死寂 (The Vacuum of Space)
+      // ============================================================
+      if (time >= TIMELINE.ACT1_END && time < TIMELINE.ACT2_START && !preDropTriggered) {
+        preDropTriggered = true;
+        audioDirector.triggerVacuumSilence();
+        // 视觉极短暂凝滞屏息
+        bloomPass.strength = 0.6;
+        corePointLight.intensity = 1.0;
+      }
+
+      // ============================================================
+      // 第二幕【断 · 爆裂与破茧初现】(8.00s ~ 13.00s) - 超新星炸裂，核心新生
+      // ============================================================
+      if (time >= TIMELINE.ACT2_START && !burstTriggered) {
+        burstTriggered = true;
+        updateStageDots(1);
+        audioDirector.triggerAct2Detonation();
+
+        // 白耀超新星闪屏
+        screenFlash.style.opacity = '1';
+        setTimeout(() => { screenFlash.style.opacity = '0'; }, 340);
+
+        bloomPass.strength = 5.8;
+        corePointLight.intensity = 24.0;
+        cameraRecoil = 0.55;
+        cinematicPass.uniforms.uChromatic.value = 0.035;
+
+        // 彻底摧毁并隐藏第一幕囚笼
+        if (obsidianCageMesh) {
+          obsidianCageMesh.visible = false;
+        }
+      }
+
+      if (time >= TIMELINE.ACT2_START && time < TIMELINE.ACT3_START) {
+        updateStageDots(1);
+        const burstT = time - TIMELINE.ACT2_START;
+
+        // 破茧的神圣核心迅速展开变大 (Scale from 0 -> 1.0)
+        if (innerSacredCore) {
+          const s = Math.min(1.0, burstT * 1.8);
+          innerSacredCore.scale.set(s, s, s);
+        }
+
+        // 双层能量激波环横扫虚空
+        shockwaveMesh1.scale.set(burstT * 5.2, burstT * 5.2, 1);
+        shockwaveMat1.opacity = Math.max(0, 1.0 - (burstT / 1.8));
+
+        shockwaveMesh2.scale.set(burstT * 3.8, burstT * 3.8, 1);
+        shockwaveMat2.opacity = Math.max(0, 1.0 - (burstT / 2.4));
+
+        // 镜头后撤仰拍，展现破碎震撼场面
+        camera.position.z = 7.5 + burstT * 0.8;
+        camera.position.y = 0.2 + burstT * 0.35;
+        camera.position.x = Math.sin(burstT * 0.6) * 1.5;
+
+        bloomPass.strength = THREE.MathUtils.lerp(bloomPass.strength, 2.0, 0.05);
+        cinematicPass.uniforms.uChromatic.value = THREE.MathUtils.lerp(cinematicPass.uniforms.uChromatic.value, 0.003, 0.04);
+
+        if (burstT > 0.8 && burstT < 4.2) {
+          narrativeLayer.classList.add('active');
+          actTag.textContent = "ACT II · THE SHATTERING";
+          actTitle.textContent = "断 · 爆 裂";
+          actDesc.textContent = "一念舍弃 · 囚笼崩解 · 神明破茧";
+          hudProse.textContent = "破执碎壳 · 初露真容 · 舍尽杂相";
+        } else {
+          narrativeLayer.classList.remove('active');
+        }
+
+        // 碎片向外高速飞散并记录位置
+        shards.forEach(shard => {
+          const v = shard.userData.burstVel;
+          const rot = shard.userData.tumble;
+          shard.position.x = shard.userData.origin.x + v.x * burstT;
+          shard.position.y = shard.userData.origin.y + v.y * burstT;
+          shard.position.z = shard.userData.origin.z + v.z * burstT;
+
+          shard.userData.currentBurstPos.copy(shard.position);
+
+          shard.rotation.x += rot.x * 0.015;
+          shard.rotation.y += rot.y * 0.015;
+          shard.rotation.z += rot.z * 0.015;
+        });
+      }
+
+      // ============================================================
+      // 第三幕【舍 · 曼陀罗天体星环重构】(13.00s ~ 21.00s)
+      // 绝不再是垃圾时间飘浮！碎片受神圣引力自组织重构成优美星环！
+      // ============================================================
+      if (time >= TIMELINE.ACT3_START && !reorgTriggered) {
+        reorgTriggered = true;
+        updateStageDots(2);
+        audioDirector.triggerAct3Reorganization();
+
+        // 触发金辉柔和闪光
+        screenFlash.style.background = 'radial-gradient(circle at center, #ffdf88 0%, #00f0ff 40%, rgba(0,0,0,0) 80%)';
+        screenFlash.style.opacity = '0.55';
+        setTimeout(() => { screenFlash.style.opacity = '0'; }, 400);
+
+        bloomPass.strength = 3.2;
+      }
+
+      if (time >= TIMELINE.ACT3_START && time < TIMELINE.ACT4_START) {
+        updateStageDots(2);
+        const reorgT = time - TIMELINE.ACT3_START;
+        const reorgProgress = Math.min(1.0, reorgT / 3.5); // 3.5s 内完成优雅入轨
+
+        bloomPass.strength = THREE.MathUtils.lerp(bloomPass.strength, 1.85, 0.04);
+
+        // 镜头做宏大 360 度低角度环视穿越星环 (Cinematic Crane Shot)
+        const angle = (reorgT / 8.0) * Math.PI * 0.7;
+        camera.position.x = Math.sin(angle) * 7.5;
+        camera.position.z = Math.cos(angle) * 7.5;
+        camera.position.y = 1.2 + Math.sin(reorgT * 0.5) * 1.2;
+
+        if (reorgT > 0.6 && reorgT < 6.8) {
+          narrativeLayer.classList.add('active');
+          actTag.textContent = "ACT III · THE MANDALA HARMONY";
+          actTitle.textContent = "舍 · 重 构";
+          actDesc.textContent = "碎而生序 · 杂相归位 · 曼陀罗星轨";
+          hudProse.textContent = "舍其纷扰 · 聚散有序 · 万物得其所";
+        } else {
+          narrativeLayer.classList.remove('active');
+        }
+
+        // 核心天体仪星环高速反向旋转
+        astrolabeRings.forEach(r => {
+          r.rotation.x += r.userData.x * 2.2;
+          r.rotation.y += r.userData.y * 2.2;
+        });
+
+        // 碎片从爆炸位置平滑插值吸附到【天体星环轨道】上！
+        shards.forEach(shard => {
+          shard.userData.mandalaAngle += shard.userData.mandalaSpeed;
+          const targetX = Math.cos(shard.userData.mandalaAngle) * shard.userData.mandalaRadius;
+          const targetZ = Math.sin(shard.userData.mandalaAngle) * shard.userData.mandalaRadius;
+          const targetY = shard.userData.mandalaHeight;
+
+          // 平滑插值 (Lerp) 飞入优美星环
+          shard.position.x = THREE.MathUtils.lerp(shard.userData.currentBurstPos.x, targetX, reorgProgress);
+          shard.position.y = THREE.MathUtils.lerp(shard.userData.currentBurstPos.y, targetY, reorgProgress);
+          shard.position.z = THREE.MathUtils.lerp(shard.userData.currentBurstPos.z, targetZ, reorgProgress);
+
+          shard.rotation.y += 0.02;
+        });
+      }
+
+      // ============================================================
+      // 第四幕【离 · 升华消融成上升光瀑】(21.00s ~ 27.20s)
+      // 物质形态彻底解体，化作冲向太虚的垂直光瀑河流！
+      // ============================================================
+      if (time >= TIMELINE.ACT4_START && !dissolveTriggered) {
+        dissolveTriggered = true;
+        updateStageDots(3);
+        audioDirector.triggerAct4Dissolution();
+        bloomPass.strength = 4.2;
+      }
+
+      if (time >= TIMELINE.ACT4_START) {
+        updateStageDots(3);
+        const disT = time - TIMELINE.ACT4_START;
+
+        // 垂直光瀑被点亮并高速上升 (Ascending Pillars)
+        pillarMat.opacity = Math.min(0.4, disT * 0.15);
+        pillarList.forEach(p => {
+          p.position.y += p.userData.speed;
+          if (p.position.y > 14) p.position.y = -10;
+        });
+
+        // 镜头垂直仰望天顶，见证万物升华 (Look up to zenith)
+        camera.position.z = 6.0 + disT * 0.4;
+        camera.position.y = 2.0 - disT * 0.15;
+        camera.position.x = Math.sin(disT * 0.3) * 2.0;
+
+        if (disT > 0.8 && disT < 5.2) {
+          narrativeLayer.classList.add('active');
+          actTag.textContent = "ACT IV · TRANSCENDENCE";
+          actTitle.textContent = "离 · 升 华";
+          actDesc.textContent = "物我两忘 · 身心清朗 · 归于太虚";
+          hudProse.textContent = "脱离形质 · 化作虚空 · 天地同流";
+        } else {
+          narrativeLayer.classList.remove('active');
+        }
+
+        // 晶体碎片缩小并垂直向上光化消融
+        shards.forEach(shard => {
+          shard.position.y += 0.06;
+          const s = Math.max(0.001, shard.scale.x * 0.985);
+          shard.scale.set(s, s, s);
+        });
+
+        // 核心星体变小，光辉柔和收敛
+        if (innerSacredCore) {
+          const s = Math.max(0.001, 1.0 - disT * 0.16);
+          innerSacredCore.scale.set(s, s, s);
+        }
+
+        // 尾部 27.2s 平滑黑屏淡出
+        if (time >= TIMELINE.FADEOUT) {
+          const fadeProg = (time - TIMELINE.FADEOUT) / (TIMELINE.TOTAL - TIMELINE.FADEOUT);
+          renderer.toneMappingExposure = Math.max(0.0001, 1.4 * (1.0 - fadeProg));
+          hudLayer.style.opacity = `${1.0 - fadeProg}`;
+
+          if (fadeProg > 0.82) {
+            audioDirector.fadeOut();
+          }
+        }
+      }
+
+      // 镜头微震衰减
+      if (cameraRecoil > 0.001) {
+        camera.position.x += (Math.random() - 0.5) * cameraRecoil;
+        camera.position.y += (Math.random() - 0.5) * cameraRecoil;
+        cameraRecoil *= 0.88;
+      }
+
+      // 鼠标平滑交互视差
+      mouse.x += (mouse.targetX - mouse.x) * 0.05;
+      mouse.y += (mouse.targetY - mouse.y) * 0.05;
+      camera.position.x += mouse.x * 0.35;
+      camera.position.y += mouse.y * 0.25;
+      camera.lookAt(0, 0, 0);
+    }
+
+    /* ------------------------------------------------------------
+       10. 电影级 4K 原生画内字幕与 HUD 合成系统 (In-Canvas Subtitle Compositor)
+       解决 captureStream 无法录制 HTML DOM 的根本痛点，实现真正的所见即所得 4K 导出！
+       ------------------------------------------------------------ */
+    const hudCanvas = document.createElement('canvas');
+    const hudCtx = hudCanvas.getContext('2d');
+
+    const prInit = Math.min(window.devicePixelRatio || 1, 2);
+    let currentHudW = Math.round(window.innerWidth * prInit);
+    let currentHudH = Math.round(window.innerHeight * prInit);
+    hudCanvas.width = currentHudW;
+    hudCanvas.height = currentHudH;
+
+    const hudScene = new THREE.Scene();
+    const hudCamera = new THREE.OrthographicCamera(-currentHudW / 2, currentHudW / 2, currentHudH / 2, -currentHudH / 2, 0, 10);
+    hudCamera.position.z = 1;
+
+    const hudTexture = new THREE.CanvasTexture(hudCanvas);
+    hudTexture.generateMipmaps = false;
+    hudTexture.minFilter = THREE.LinearFilter;
+    hudTexture.magFilter = THREE.LinearFilter;
+
+    const hudPlaneGeo = new THREE.PlaneGeometry(currentHudW, currentHudH);
+    const hudPlaneMat = new THREE.MeshBasicMaterial({
+      map: hudTexture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
+    const hudPlane = new THREE.Mesh(hudPlaneGeo, hudPlaneMat);
+    hudScene.add(hudPlane);
+
+    function resizeHud(w, h) {
+      currentHudW = Math.round(w);
+      currentHudH = Math.round(h);
+      hudCanvas.width = currentHudW;
+      hudCanvas.height = currentHudH;
+
+      hudCamera.left = -currentHudW / 2;
+      hudCamera.right = currentHudW / 2;
+      hudCamera.top = currentHudH / 2;
+      hudCamera.bottom = -currentHudH / 2;
+      hudCamera.updateProjectionMatrix();
+
+      hudPlane.geometry.dispose();
+      hudPlane.geometry = new THREE.PlaneGeometry(currentHudW, currentHudH);
+    }
+
+    function drawInCanvasHUD(time, W, H) {
+      hudCtx.clearRect(0, 0, W, H);
+
+      // 1. 2.39:1 宽银幕电影上下遮幅 (Anamorphic Cinema Letterbox Bars)
+      const barH = Math.round(H * 0.08);
+      hudCtx.fillStyle = '#000000';
+      hudCtx.fillRect(0, 0, W, barH);
+      hudCtx.fillRect(0, H - barH, W, barH);
+
+      // 遮幅金白分界发丝线
+      hudCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      hudCtx.lineWidth = Math.max(1, Math.round(H * 0.0008));
+      hudCtx.beginPath();
+      hudCtx.moveTo(0, barH);
+      hudCtx.lineTo(W, barH);
+      hudCtx.moveTo(0, H - barH);
+      hudCtx.lineTo(W, H - barH);
+      hudCtx.stroke();
+
+      // 2. 顶部 HUD 状态栏
+      const topPadY = Math.round(barH * 0.62);
+      const fsMono = Math.max(11, Math.round(H * 0.012));
+
+      // 左侧品牌标示
+      const brandX = Math.round(W * 0.045);
+      const orbRadius = Math.max(3, Math.round(H * 0.0035));
+      hudCtx.beginPath();
+      hudCtx.arc(brandX, topPadY, orbRadius, 0, Math.PI * 2);
+      hudCtx.fillStyle = '#00f0ff';
+      hudCtx.shadowColor = '#00f0ff';
+      hudCtx.shadowBlur = 8;
+      hudCtx.fill();
+      hudCtx.shadowBlur = 0;
+
+      hudCtx.font = `600 ${fsMono}px "Space Mono", monospace`;
+      hudCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      hudCtx.textAlign = 'left';
+      hudCtx.textBaseline = 'middle';
+      hudCtx.fillText("DAN-SHA-RI // 4-ACT SUITE", brandX + orbRadius * 3, topPadY);
+
+      // 中间 4 阶段进阶指示器 (Act I ~ IV)
+      const dotCenterX = W * 0.5;
+      const dotSpacing = Math.round(W * 0.024);
+      const currentActIdx = time < 8.0 ? 0 : (time < 13.0 ? 1 : (time < 21.0 ? 2 : 3));
+
+      for (let i = 0; i < 4; i++) {
+        const dx = dotCenterX + (i - 1.5) * dotSpacing;
+        const r = Math.max(2.5, Math.round(H * 0.0032));
+        hudCtx.beginPath();
+        hudCtx.arc(dx, topPadY, r, 0, Math.PI * 2);
+        if (i < currentActIdx) {
+          hudCtx.fillStyle = '#ffdf88';
+          hudCtx.shadowColor = '#ffdf88';
+          hudCtx.shadowBlur = 6;
+          hudCtx.fill();
+        } else if (i === currentActIdx) {
+          hudCtx.fillStyle = '#00f0ff';
+          hudCtx.shadowColor = '#00f0ff';
+          hudCtx.shadowBlur = 10;
+          hudCtx.fill();
+        } else {
+          hudCtx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+          hudCtx.shadowBlur = 0;
+          hudCtx.fill();
+        }
+        hudCtx.shadowBlur = 0;
+      }
+
+      // 右侧管线状态
+      hudCtx.textAlign = 'right';
+      hudCtx.font = `500 ${fsMono}px "Space Mono", monospace`;
+      hudCtx.fillStyle = 'rgba(0, 240, 255, 0.75)';
+      hudCtx.fillText(isRecording4K ? "PIPELINE: 4K UHD MASTER (3840×2160)" : "PIPELINE: ACTIVE", W - brandX, topPadY);
+
+      // 3. 黄金下三分之一电影叙事字幕 (Subtitles & Act Cards)
+      let actData = null;
+      let alpha = 0;
+
+      if (time >= 0.8 && time < 7.2) {
+        // 第一幕
+        actData = {
+          tag: "ACT I · THE COCOON",
+          title: "执 · 囚 笼",
+          desc: "万物附骨 · 禁锢重压 · 窒息坍缩",
+          prose: "执念如囚 · 杂质繁冗 · 压制神明"
+        };
+        if (time < 1.8) alpha = (time - 0.8) / 1.0;
+        else if (time > 6.0) alpha = Math.max(0, (7.2 - time) / 1.2);
+        else alpha = 1.0;
+      } else if (time >= 8.6 && time < 12.4) {
+        // 第二幕
+        actData = {
+          tag: "ACT II · THE SHATTERING",
+          title: "断 · 爆 裂",
+          desc: "一念舍弃 · 囚笼崩解 · 神明破茧",
+          prose: "破执碎壳 · 初露真容 · 舍尽杂相"
+        };
+        if (time < 9.4) alpha = (time - 8.6) / 0.8;
+        else if (time > 11.6) alpha = Math.max(0, (12.4 - time) / 0.8);
+        else alpha = 1.0;
+      } else if (time >= 13.6 && time < 20.2) {
+        // 第三幕
+        actData = {
+          tag: "ACT III · THE MANDALA HARMONY",
+          title: "舍 · 重 构",
+          desc: "碎而生序 · 杂相归位 · 曼陀罗星轨",
+          prose: "舍其纷扰 · 聚散有序 · 万物得其所"
+        };
+        if (time < 14.6) alpha = (time - 13.6) / 1.0;
+        else if (time > 19.2) alpha = Math.max(0, (20.2 - time) / 1.0);
+        else alpha = 1.0;
+      } else if (time >= 21.6 && time < 26.6) {
+        // 第四幕
+        actData = {
+          tag: "ACT IV · TRANSCENDENCE",
+          title: "离 · 升 华",
+          desc: "物我两忘 · 身心清朗 · 归于太虚",
+          prose: "脱离形质 · 化作虚空 · 天地同流"
+        };
+        if (time < 22.6) alpha = (time - 21.6) / 1.0;
+        else if (time > 25.6) alpha = Math.max(0, (26.6 - time) / 1.0);
+        else alpha = 1.0;
+      } else if (time >= 27.2 && time <= 30.0) {
+        // 终极尾声
+        actData = {
+          tag: "EPILOGUE",
+          title: "太 · 虚",
+          desc: "断绝不必要的羁绊 · 归于太虚",
+          prose: "天地澄明 · 静水流深"
+        };
+        alpha = Math.min(1.0, (time - 27.2) / 1.2);
+      }
+
+      if (actData && alpha > 0.01) {
+        const subCenterY = H * 0.852; // 黄金下部居中，完全避开中心发光球体
+
+        hudCtx.save();
+        hudCtx.globalAlpha = alpha;
+        hudCtx.textAlign = 'center';
+        hudCtx.textBaseline = 'middle';
+
+        // Act Tag (ACT I · THE COCOON)
+        const fsTag = Math.max(10, Math.round(H * 0.013));
+        hudCtx.font = `500 ${fsTag}px "Space Mono", monospace`;
+        hudCtx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        hudCtx.shadowBlur = 10;
+        hudCtx.shadowOffsetX = 0;
+        hudCtx.shadowOffsetY = 2;
+        hudCtx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+        hudCtx.lineWidth = Math.max(2, Math.round(H * 0.0016));
+        hudCtx.strokeText(actData.tag, W * 0.5, subCenterY - H * 0.026);
+        hudCtx.fillStyle = 'rgba(0, 240, 255, 0.92)';
+        hudCtx.fillText(actData.tag, W * 0.5, subCenterY - H * 0.026);
+
+        // Act Title ("执 · 囚 笼") - 优雅电影宋体，克制温润
+        const fsTitle = Math.max(22, Math.round(H * 0.030));
+        hudCtx.font = `400 ${fsTitle}px "Noto Serif SC", serif`;
+        hudCtx.shadowColor = 'rgba(0, 0, 0, 0.98)';
+        hudCtx.shadowBlur = 16;
+        hudCtx.shadowOffsetX = 0;
+        hudCtx.shadowOffsetY = 3;
+        hudCtx.strokeStyle = 'rgba(0, 0, 0, 0.90)';
+        hudCtx.lineWidth = Math.max(3, Math.round(H * 0.0024));
+        hudCtx.strokeText(actData.title, W * 0.5, subCenterY);
+        hudCtx.fillStyle = '#ffffff';
+        hudCtx.fillText(actData.title, W * 0.5, subCenterY);
+
+        // Act Desc ("万物附骨 · 禁锢重压 · 窒息坍缩")
+        const fsDesc = Math.max(12, Math.round(H * 0.014));
+        hudCtx.font = `300 ${fsDesc}px "Noto Serif SC", serif`;
+        hudCtx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        hudCtx.shadowBlur = 12;
+        hudCtx.shadowOffsetX = 0;
+        hudCtx.shadowOffsetY = 2;
+        hudCtx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+        hudCtx.lineWidth = Math.max(2, Math.round(H * 0.0018));
+        hudCtx.strokeText(actData.desc, W * 0.5, subCenterY + H * 0.024);
+        hudCtx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        hudCtx.fillText(actData.desc, W * 0.5, subCenterY + H * 0.024);
+
+        hudCtx.restore();
+      }
+
+      // 4. 底部 HUD 诗意哲理句与时间码
+      const botPadY = H - Math.round(barH * 0.45);
+      hudCtx.font = `400 ${fsMono}px "Noto Serif SC", serif`;
+      hudCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      hudCtx.textAlign = 'left';
+      hudCtx.textBaseline = 'middle';
+      if (actData && actData.prose) {
+        hudCtx.fillText(actData.prose, brandX, botPadY);
+      }
+
+      // 底部右侧时间码 (08.24 / 30.00)
+      hudCtx.textAlign = 'right';
+      hudCtx.font = `600 ${fsMono}px "Space Mono", monospace`;
+      hudCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      const curSec = Math.min(30.0, Math.max(0, time)).toFixed(2).padStart(5, '0');
+      hudCtx.fillText(`${curSec} / 30.00`, W - brandX, botPadY);
+
+      // 5. 底部微细电影进度条
+      const prog = Math.min(1.0, Math.max(0, time / 30.0));
+      const lineY = H - barH;
+      hudCtx.beginPath();
+      hudCtx.moveTo(0, lineY);
+      hudCtx.lineTo(W * prog, lineY);
+      const progGrad = hudCtx.createLinearGradient(0, 0, W, 0);
+      progGrad.addColorStop(0, '#00f0ff');
+      progGrad.addColorStop(0.5, '#a6f4ff');
+      progGrad.addColorStop(1, '#ffdf88');
+      hudCtx.strokeStyle = progGrad;
+      hudCtx.lineWidth = Math.max(1.5, Math.round(H * 0.0012));
+      hudCtx.stroke();
+    }
+
+    /* ------------------------------------------------------------
+       11. 主渲染与微尘动力学循环 (Main Render Loop)
+       ------------------------------------------------------------ */
+    const clock = new THREE.Clock();
+
+    function mainRenderLoop() {
+      requestAnimationFrame(mainRenderLoop);
+
+      const delta = clock.getDelta();
+      const totalElapsed = clock.getElapsedTime();
+
+      // 更新后处理噪点时间
+      cinematicPass.uniforms.uTime.value = totalElapsed;
+
+      // 驱动 Blender 骨骼轨道动画 (AnimationMixer)
+      if (mixer) {
+        mixer.update(delta);
+      }
+
+      // 驱动 3500 颗粒子动力学
+      const posArray = particleSystem.geometry.attributes.position.array;
+      const isBurst = isPlaying && ((performance.now() - startTime) / 1000 >= TIMELINE.ACT2_START);
+      const isDissolve = isPlaying && ((performance.now() - startTime) / 1000 >= TIMELINE.ACT4_START);
+
+      for (let i = 0; i < particleCount; i++) {
+        const meta = particleMeta[i];
+        if (!isBurst) {
+          // 第一幕：黑洞吸积盘旋转向内坍缩
+          meta.angle += meta.speed * 0.035;
+          meta.radius -= 0.002;
+          if (meta.radius < 0.8) meta.radius = 9.0;
+
+          posArray[i * 3]     = Math.cos(meta.angle) * meta.radius;
+          posArray[i * 3 + 1] = meta.y + Math.sin(totalElapsed * 2.0 + meta.angle) * 0.2;
+          posArray[i * 3 + 2] = Math.sin(meta.angle) * meta.radius;
+        } else if (!isDissolve) {
+          // 第二/三幕：超新星粒子狂暴向外辐射
+          posArray[i * 3]     += meta.burstVelocity.x * 0.015;
+          posArray[i * 3 + 1] += meta.burstVelocity.y * 0.015;
+          posArray[i * 3 + 2] += meta.burstVelocity.z * 0.015;
+        } else {
+          // 第四幕：万物升华为上升光雨 (Ascending Stardust)
+          posArray[i * 3 + 1] += 0.08;
+          if (posArray[i * 3 + 1] > 12) posArray[i * 3 + 1] = -8;
+        }
+      }
+      particleSystem.geometry.attributes.position.needsUpdate = true;
+
+      // 执行四幕式导演时间轴
+      let currentTime = 0;
+      if (isPlaying) {
+        currentTime = (performance.now() - startTime) / 1000;
+        if (currentTime <= TIMELINE.TOTAL) {
+          runNarrativeDirector(currentTime);
+        } else {
+          isPlaying = false;
+          epilogueLayer.classList.add('active');
+        }
+      }
+
+      composer.render();
+
+      // 电影级画内字幕与 HUD 合成 (统一绘制至 WebGL 画布，确保 4K 录制与屏幕所见即所得完全一致)
+      if (isPlaying) {
+        drawInCanvasHUD(currentTime, currentHudW, currentHudH);
+        hudTexture.needsUpdate = true;
+        renderer.autoClear = false;
+        renderer.render(hudScene, hudCamera);
+        renderer.autoClear = true;
+      }
+    }
+    mainRenderLoop();
+
+    /* ------------------------------------------------------------
+       12. 启幕与重放交互 (Launch & Replay)
+       ------------------------------------------------------------ */
+    async function launchExperience() {
+      await audioDirector.init();
+      audioDirector.startAct1();
+
+      portalScreen.classList.add('hidden');
+      epilogueLayer.classList.remove('active');
+
+      renderer.toneMappingExposure = 1.4;
+      cameraRecoil = 0;
+      burstTriggered = false;
+      reorgTriggered = false;
+      dissolveTriggered = false;
+      preDropTriggered = false;
+
+      // 重置资产状态
+      if (obsidianCageMesh) obsidianCageMesh.visible = true;
+      if (innerSacredCore) innerSacredCore.scale.set(0.001, 0.001, 0.001);
+      pillarMat.opacity = 0;
+
+      shards.forEach(shard => {
+        shard.position.copy(shard.userData.origin);
+        shard.scale.set(0.6, 0.9, 0.6);
+      });
+
+      startTime = performance.now();
+      isPlaying = true;
+    }
+
+    /* ------------------------------------------------------------
+       13. 4K 超高清 (3840×2160) 视听同步一键导出引擎
+       ------------------------------------------------------------ */
+    let isRecording4K = false;
+    let savedViewport = null;
+
+    async function start4KRecording() {
+      if (isRecording4K) return;
+      isRecording4K = true;
+
+      const recBanner = document.getElementById('rec-banner');
+      const recStatusText = document.getElementById('rec-status-text');
+      recBanner.classList.add('active');
+      recStatusText.textContent = "REC 4K UHD (3840×2160) · 正在渲染录制中 (请保持网页打开)...";
+
+      // 1. 确保音频上下文完全就绪并唤醒处于 running 状态，确保音轨数据流入
+      await audioDirector.init();
+      if (audioDirector.ctx.state === 'suspended') {
+        await audioDirector.ctx.resume();
+      }
+      const audioStream = audioDirector.getAudioStream();
+
+      // 2. 将 WebGL 渲染画布与画内字幕系统一并强行提升至物理级真 4K (3840 × 2160)
+      savedViewport = {
+        w: window.innerWidth,
+        h: window.innerHeight,
+        pr: window.devicePixelRatio || 1
+      };
+
+      renderer.setPixelRatio(1);
+      renderer.setSize(3840, 2160, false);
+      composer.setSize(3840, 2160);
+      bloomPass.setSize(3840, 2160);
+      camera.aspect = 3840 / 2160;
+      camera.updateProjectionMatrix();
+      resizeHud(3840, 2160);
+
+      // 3. 捕获 4K Canvas 画面并与 Web Audio 音轨合成
+      const canvasStream = canvas.captureStream(60);
+      const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...audioStream.getAudioTracks()
+      ];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      let selectedMime = 'video/webm;codecs=vp9,opus';
+      if (!MediaRecorder.isTypeSupported(selectedMime)) {
+        selectedMime = 'video/webm;codecs=vp8,opus';
+      }
+      if (!MediaRecorder.isTypeSupported(selectedMime)) {
+        selectedMime = 'video/webm';
+      }
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: selectedMime,
+        videoBitsPerSecond: 65000000 // 65 Mbps 4K 院线级超高码率
+      });
+
+      const videoChunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          videoChunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        recStatusText.textContent = "4K 渲染完成！正在生成文件并下载...";
+        const blob = new Blob(videoChunks, { type: selectedMime });
+        window.lastRecordedBlob = blob;
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `断舍离_DAN-SHA-RI_4K_UHD_30s.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+
+        // 恢复屏幕正常分辨率与 HUD 缩放
+        const pr = Math.min(savedViewport.pr, 2);
+        renderer.setPixelRatio(pr);
+        renderer.setSize(savedViewport.w, savedViewport.h);
+        composer.setSize(savedViewport.w, savedViewport.h);
+        bloomPass.setSize(savedViewport.w, savedViewport.h);
+        camera.aspect = savedViewport.w / savedViewport.h;
+        camera.updateProjectionMatrix();
+        resizeHud(savedViewport.w * pr, savedViewport.h * pr);
+
+        recBanner.classList.remove('active');
+        isRecording4K = false;
+      };
+
+      // 启动 MediaRecorder (每 500ms 分块)
+      recorder.start(500);
+
+      // 启动 30 秒全流程动画与声音
+      await launchExperience();
+
+      // 30 秒到达后自动切断并触发保存
+      const checkRecordTimer = setInterval(() => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        if (elapsed >= TIMELINE.TOTAL) {
+          clearInterval(checkRecordTimer);
+          if (recorder.state === 'recording') {
+            recorder.stop();
+          }
+        }
+      }, 100);
+    }
+
+    btnPortal.addEventListener('click', launchExperience);
+    btnRestart.addEventListener('click', launchExperience);
+    if (btnExport4k) btnExport4k.addEventListener('click', start4KRecording);
+    if (btnExport4kEnd) btnExport4kEnd.addEventListener('click', start4KRecording);
+
+    window.addEventListener('resize', () => {
+      if (isRecording4K) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const pr = Math.min(window.devicePixelRatio || 1, 2);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+      bloomPass.setSize(w, h);
+      resizeHud(w * pr, h * pr);
+    });
+  </script>
+</body>
+</html>

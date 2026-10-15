@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>断 · 舍 · 离 | VIBE WEB3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@300;700&family=Noto+Serif+SC:wght@200;300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}
+:root{--c:#00f0ff;--g:#ffaa22;--w:#fff;--b:#000;--ez:cubic-bezier(.16,1,.3,1)}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Space Mono',monospace;color:#fff;cursor:crosshair}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
+
+/* ── Letterbox ── */
+.lbx{position:fixed;inset:0;pointer-events:none;z-index:30;display:flex;flex-direction:column;justify-content:space-between}
+.lbx .b{width:100%;background:#000;height:clamp(28px,8vh,72px);transition:height 2s var(--ez)}
+.lbx .b.wide{height:clamp(44px,12.5vh,112px)}
+
+/* ── Flash ── */
+#flash{position:fixed;inset:0;z-index:45;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,#fff 0%,#a0f0ff 20%,#001830 60%,#000 100%);
+  opacity:0;mix-blend-mode:screen}
+
+/* ── Scanlines ── */
+.scl{position:fixed;inset:0;z-index:18;pointer-events:none;
+  background:repeating-linear-gradient(180deg,transparent 0,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px)}
+
+/* ── Portal ── */
+#portal{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px;
+  background:radial-gradient(ellipse at 50% 45%,#010c18 0%,#000508 55%,#000 100%);
+  transition:opacity 1.6s ease,visibility 1.6s ease}
+#portal.gone{opacity:0;visibility:hidden;pointer-events:none}
+.p-orb{width:72px;height:72px;border-radius:50%;border:1px solid rgba(0,240,255,.25);display:flex;align-items:center;justify-content:center;position:relative;animation:ob 3.5s ease-in-out infinite}
+.p-orb::before{content:'';position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(255,170,34,.2);animation:ob 3s ease-in-out infinite reverse}
+.p-orb::after{content:'';position:absolute;inset:22px;border-radius:50%;background:var(--c);box-shadow:0 0 24px var(--c),0 0 60px rgba(0,240,255,.3)}
+@keyframes ob{0%,100%{transform:rotate(0deg) scale(1);opacity:.65}50%{transform:rotate(180deg) scale(1.08);opacity:1}}
+.p-title h1{font-family:'Noto Serif SC',serif;font-weight:200;font-size:clamp(38px,6.5vw,78px);letter-spacing:.85em;text-indent:.85em;text-align:center;color:#fff;text-shadow:0 0 70px rgba(255,255,255,.25);margin-bottom:12px}
+.p-title p{font-size:10px;letter-spacing:.5em;color:rgba(0,240,255,.55);text-align:center}
+#btn-go{font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.55em;color:rgba(255,255,255,.5);background:transparent;border:1px solid rgba(255,255,255,.12);padding:15px 42px;cursor:pointer;transition:all .5s ease;text-transform:uppercase}
+#btn-go:hover{color:#fff;border-color:rgba(0,240,255,.4);box-shadow:0 0 24px rgba(0,240,255,.08)}
+.p-note{font-size:9px;letter-spacing:.3em;color:rgba(255,255,255,.18);text-align:center;line-height:2}
+
+/* ── HUD ── */
+#hud{position:fixed;inset:0;z-index:24;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(30px,10.5vh,88px) clamp(20px,4vw,58px);opacity:0;transition:opacity 2.2s ease}
+#hud.on{opacity:1}
+.ht{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:11px;font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.45em;color:rgba(255,255,255,.88)}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);animation:dp 2.4s ease-in-out infinite}
+@keyframes dp{0%,100%{transform:scale(.8);opacity:.45}50%{transform:scale(1.6);opacity:1}}
+.vu{display:flex;align-items:flex-end;gap:2.5px;height:14px}
+.vb{width:2px;border-radius:1px;background:rgba(0,240,255,.45);height:3px;transition:height .06s ease}
+#tc{font-size:10px;letter-spacing:.32em;color:rgba(255,255,255,.3)}
+.hb{display:flex;flex-direction:column;gap:14px}
+.hbr{display:flex;justify-content:space-between;align-items:flex-end}
+#prose{font-family:'Noto Serif SC',serif;font-size:11px;font-weight:200;letter-spacing:.55em;color:rgba(255,255,255,.58);max-width:58%}
+#stat{font-size:9px;letter-spacing:.28em;color:rgba(0,240,255,.38);text-align:right}
+.prog{width:100%;height:1px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.prog::after{content:'';position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--c),var(--g));width:var(--p,0%);transition:width .12s linear}
+
+/* ── Narrative ── */
+#narr{position:fixed;inset:0;z-index:22;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:13px}
+.na{font-size:10px;letter-spacing:.95em;text-indent:.95em;color:var(--c);text-transform:uppercase;opacity:0;transform:translateY(16px);transition:opacity 1.3s var(--ez),transform 1.3s var(--ez);text-shadow:0 0 22px rgba(0,240,255,.5)}
+.nt{font-family:'Noto Serif SC',serif;font-size:clamp(30px,5.2vw,62px);font-weight:200;letter-spacing:.72em;text-indent:.72em;color:#fff;text-shadow:0 0 55px rgba(255,255,255,.38);opacity:0;transform:scale(.92);transition:opacity 1.5s var(--ez),transform 1.5s var(--ez)}
+.nd{font-family:'Noto Serif SC',serif;font-size:12px;font-weight:300;letter-spacing:.62em;text-indent:.62em;color:rgba(255,255,255,.42);opacity:0;transform:translateY(9px);transition:opacity 1.2s var(--ez),transform 1.2s var(--ez);transition-delay:.15s}
+#narr.on .na{opacity:1;transform:translateY(0)}
+#narr.on .nt{opacity:1;transform:scale(1)}
+#narr.on .nd{opacity:1;transform:translateY(0)}
+
+/* ── Stage dots ── */
+.sds{position:fixed;right:clamp(18px,3vw,38px);top:50%;transform:translateY(-50%);z-index:25;pointer-events:none;display:flex;flex-direction:column;gap:10px;opacity:0;transition:opacity 1s ease}
+.sds.on{opacity:1}
+.sd{width:5px;height:5px;border-radius:50%;border:1px solid rgba(255,255,255,.2);transition:all .65s ease}
+.sd.act{background:var(--c);border-color:var(--c);box-shadow:0 0 10px var(--c)}
+
+/* ── Streak ── */
+.stk{position:fixed;inset:0;z-index:19;pointer-events:none;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,240,255,.013) 49%,rgba(0,240,255,.013) 51%,transparent 100%);
+  mix-blend-mode:screen;opacity:0;transition:opacity .35s ease}
+.stk.on{opacity:1}
+
+/* ── Epilogue ── */
+#epi{position:fixed;inset:0;z-index:48;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:42px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 2.4s ease,visibility 2.4s ease}
+#epi.on{opacity:1;visibility:visible;pointer-events:all}
+.ek{font-family:'Noto Serif SC',serif;font-size:clamp(46px,7.5vw,92px);font-weight:200;letter-spacing:1.1em;text-indent:1.1em;color:rgba(255,255,255,.9);text-shadow:0 0 90px rgba(255,255,255,.18)}
+.es{font-size:9px;letter-spacing:.5em;color:rgba(255,255,255,.22);text-align:center;line-height:2.4}
+#btn-rp{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.5em;color:rgba(255,255,255,.42);background:transparent;border:1px solid rgba(255,255,255,.1);padding:14px 36px;cursor:pointer;transition:all .5s ease;text-transform:uppercase}
+#btn-rp:hover{color:#fff;border-color:rgba(255,255,255,.28)}
+</style>
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+<div class="scl"></div>
+<div class="stk" id="stk"></div>
+<div id="flash"></div>
+<div class="lbx"><div class="b" id="lb1"></div><div class="b" id="lb2"></div></div>
+
+<!-- Portal -->
+<div id="portal">
+  <div class="p-orb"></div>
+  <div class="p-title">
+    <h1>断 舍 离</h1>
+    <p>WEB3D CINEMATIC · BLENDER ASSET PIPELINE · 30s</p>
+  </div>
+  <button id="btn-go">ENTER THE VOID · 进入太虚</button>
+  <div class="p-note">将 zen_core.glb 放入同目录以使用 Blender 定制资产<br>GLTF / DRACO ASSET AUTO-MOUNT ON LAUNCH</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="ht">
+    <div class="brand"><div class="bdot"></div>断 · 舍 · 离</div>
+    <div class="vu" id="vu"></div>
+    <div id="tc">00.00 / 30.00</div>
+  </div>
+  <div class="hb">
+    <div class="prog" id="prog"></div>
+    <div class="hbr">
+      <div id="prose">执念如囚 · 杂质繁冗 · 压制神明</div>
+      <div id="stat">PIPELINE: INIT</div>
+    </div>
+  </div>
+</div>
+
+<!-- Narrative -->
+<div id="narr">
+  <div class="na" id="na"></div>
+  <div class="nt" id="nt"></div>
+  <div class="nd" id="nd"></div>
+</div>
+
+<!-- Stage dots -->
+<div class="sds" id="sds">
+  <div class="sd act"></div>
+  <div class="sd"></div>
+  <div class="sd"></div>
+  <div class="sd"></div>
+</div>
+
+<!-- Epilogue -->
+<div id="epi">
+  <div class="ek">断 舍 离</div>
+  <div class="es">一物不留 · 一念不执 · 归于太虚<br>EVERYTHING RELEASED · NOTHING REMAINS</div>
+  <button id="btn-rp">REPLAY · 再次领悟</button>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }     from 'three/addons/loaders/DRACOLoader.js';
+import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass }      from 'three/addons/postprocessing/ShaderPass.js';
+
+/* ════════════════════════════════════════════════════════════
+   §0  TIME MAP
+════════════════════════════════════════════════════════════ */
+const TL = {
+  TOTAL:  30.00,
+  A1_END:  7.82,   // 第一幕结束
+  VAC:     8.00,   // 0.18s 真空
+  A2S:     8.00,   // 第二幕开始
+  A2E:    13.00,
+  A3S:    13.00,   // 第三幕
+  A3E:    21.00,
+  A4S:    21.00,   // 第四幕
+  FADE:   27.20,
+};
+
+/* ════════════════════════════════════════════════════════════
+   §1  DOM
+════════════════════════════════════════════════════════════ */
+const g  = id => document.getElementById(id);
+const el = {
+  cv:    g('cv'),   portal: g('portal'), hud: g('hud'),
+  tc:    g('tc'),   prog:   g('prog'),   prose: g('prose'),
+  stat:  g('stat'), narr:   g('narr'),   na: g('na'),
+  nt:    g('nt'),   nd:     g('nd'),     flash: g('flash'),
+  stk:   g('stk'),  epi:    g('epi'),    sds: g('sds'),
+  vu:    g('vu'),   lb1:    g('lb1'),    lb2: g('lb2'),
+};
+
+const VU = 18;
+const vuB = Array.from({length:VU},()=>{ const d=document.createElement('div'); d.className='vb'; el.vu.appendChild(d); return d; });
+
+/* ════════════════════════════════════════════════════════════
+   §2  STATE
+════════════════════════════════════════════════════════════ */
+let playing=false, t0=0, prevAct=-1;
+const TR = {vac:false,burst:false,reorg:false,diss:false,epi:false};
+
+/* ════════════════════════════════════════════════════════════
+   §3  MOUSE
+════════════════════════════════════════════════════════════ */
+const mx={x:0,y:0,tx:0,ty:0};
+window.addEventListener('mousemove',e=>{
+  mx.tx=(e.clientX/innerWidth)*2-1;
+  mx.ty=-(e.clientY/innerHeight)*2+1;
+});
+
+/* ════════════════════════════════════════════════════════════
+   §4  AUDIO ENGINE — 深空禅意声景
+════════════════════════════════════════════════════════════ */
+class Audio {
+  constructor(){ this.ctx=null; this.mst=null; }
+
+  _boot(){
+    if(this.ctx)return;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    this.ctx=new AC();
+    // 温和高频货架 EQ（-6dB @ 3.5kHz）
+    const eq=this.ctx.createBiquadFilter();
+    eq.type='highshelf'; eq.frequency.value=3500; eq.gain.value=-7;
+    // Limiter
+    const lim=this.ctx.createDynamicsCompressor();
+    lim.threshold.value=-5; lim.ratio.value=16;
+    lim.attack.value=0.001; lim.release.value=0.1;
+    this.mst=this.ctx.createGain(); this.mst.gain.value=0.42;
+    this.mst.connect(eq); eq.connect(lim); lim.connect(this.ctx.destination);
+  }
+
+  _osc(freq,type,gain,dur,del=0){
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime+del;
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(gain,t+Math.min(.08,dur*.15));
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(this.mst); o.start(t); o.stop(t+dur+.05);
+  }
+
+  act1(){
+    this._boot();
+    // 深空低频嗡鸣 (36 Hz sine，3s渐入)
+    const drn=this.ctx.createOscillator(),dg=this.ctx.createGain(),df=this.ctx.createBiquadFilter();
+    drn.type='sine'; drn.frequency.value=36;
+    df.type='lowpass'; df.frequency.value=160; df.Q.value=1;
+    dg.gain.setValueAtTime(0,this.ctx.currentTime);
+    dg.gain.linearRampToValueAtTime(.32,this.ctx.currentTime+3.5);
+    drn.connect(df); df.connect(dg); dg.connect(this.mst); drn.start();
+    drn.frequency.linearRampToValueAtTime(48,this.ctx.currentTime+TL.A1_END);
+    this._drone=drn; this._droneGain=dg;
+
+    // Shepard升音（5层，低增益）
+    for(let i=0;i<5;i++){
+      const f=55*Math.pow(2,i), env=Math.sin(((i+.5)/5)*Math.PI);
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      o.frequency.linearRampToValueAtTime(f*2,this.ctx.currentTime+TL.A1_END);
+      g.gain.value=.016*env;
+      o.connect(g); g.connect(this.mst); o.start(); o.stop(this.ctx.currentTime+TL.A1_END+.5);
+    }
+
+    // 心跳（58→105 BPM，低音量）
+    let bpm=58;
+    const hb=()=>{
+      if(!playing)return;
+      const el=(performance.now()-t0)/1000;
+      if(el>=TL.A1_END)return;
+      bpm=58+(el/TL.A1_END)*47;
+      this._heartbeat(.10+(el/TL.A1_END)*.08);
+      this._hbTimer=setTimeout(hb,(60/bpm)*1000);
+    };
+    setTimeout(hb,900);
+  }
+
+  _heartbeat(v){
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(48,this.ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(18,this.ctx.currentTime+.24);
+    g.gain.setValueAtTime(v,this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+.3);
+    o.connect(g); g.connect(this.mst); o.start(); o.stop(this.ctx.currentTime+.35);
+  }
+
+  vacuum(){
+    if(!this.ctx)return;
+    clearTimeout(this._hbTimer);
+    this.mst.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.mst.gain.linearRampToValueAtTime(0,this.ctx.currentTime+.1);
+  }
+
+  burst(){
+    if(!this.ctx)return;
+    this.mst.gain.setValueAtTime(0,this.ctx.currentTime);
+    this.mst.gain.linearRampToValueAtTime(.48,this.ctx.currentTime+.15);
+    // Sub 冲击
+    const s=this.ctx.createOscillator(),sg=this.ctx.createGain();
+    s.type='sine'; s.frequency.setValueAtTime(36,this.ctx.currentTime);
+    s.frequency.exponentialRampToValueAtTime(14,this.ctx.currentTime+.9);
+    sg.gain.setValueAtTime(.7,this.ctx.currentTime);
+    sg.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+1.2);
+    s.connect(sg); sg.connect(this.mst); s.start(); s.stop(this.ctx.currentTime+1.3);
+    // 带通噪声（空间破碎感，500~1200Hz，温和）
+    const bl=this.ctx.sampleRate*.6,buf=this.ctx.createBuffer(1,bl,this.ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<bl;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(bl*.38));
+    const ns=this.ctx.createBufferSource(),bp=this.ctx.createBiquadFilter(),ng=this.ctx.createGain();
+    bp.type='bandpass'; bp.frequency.value=640; bp.Q.value=.7;
+    ng.gain.value=.18; ns.buffer=buf;
+    ns.connect(bp); bp.connect(ng); ng.connect(this.mst); ns.start();
+    // 空间残响（sine，五度程和弦）
+    [220,330,440,660].forEach((f,i)=>{
+      const del=i*.08;
+      this._osc(f,'sine',.042/(i+1),2.2+i*.5,del);
+    });
+  }
+
+  act3(){
+    if(!this.ctx)return;
+    // 五声音阶 Pad（D 宫，低音量，错开进入）
+    [146,220,293,440,587].forEach((f,i)=>{
+      this._osc(f,'sine',.022/(i*.25+1),7.5+i*.3,i*.55);
+    });
+  }
+
+  act4(){
+    if(!this.ctx)return;
+    // 纯律颂钵（慢渐入，长拖尾）
+    [216,324,432,528].forEach((f,i)=>{
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      const t=this.ctx.currentTime+i*.9;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.052,t+1);
+      g.gain.exponentialRampToValueAtTime(.0001,t+9);
+      o.connect(g); g.connect(this.mst); o.start(t); o.stop(t+10);
+    });
+  }
+
+  fade(d=3.8){ if(!this.ctx||!this.mst)return; this.mst.gain.linearRampToValueAtTime(0,this.ctx.currentTime+d); }
+}
+const audio=new Audio();
+
+/* ════════════════════════════════════════════════════════════
+   §5  RENDERER / SCENE / CAMERA
+════════════════════════════════════════════════════════════ */
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x000000);
+scene.fog=new THREE.FogExp2(0x000000,.022);
+
+const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.05,220);
+camera.position.set(0,.6,16);
+
+const renderer=new THREE.WebGLRenderer({canvas:el.cv,antialias:true,powerPreference:'high-performance',precision:'highp'});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.3;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+/* ════════════════════════════════════════════════════════════
+   §6  PMREM IBL — 摄影棚级高反差环境贴图
+════════════════════════════════════════════════════════════ */
+(function buildIBL(){
+  const pm=new THREE.PMREMGenerator(renderer);
+  pm.compileEquirectangularShader();
+  const W=1024,H=512,cv=document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const c=cv.getContext('2d');
+  c.fillStyle='#010408'; c.fillRect(0,0,W,H);
+  // 顶部软光箱
+  const t=c.createLinearGradient(0,0,0,H*.44);
+  t.addColorStop(0,'rgba(255,255,255,.90)'); t.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=t; c.fillRect(55,0,W-110,H*.5);
+  // 左侧青蓝轮廓
+  const l=c.createRadialGradient(100,H/2,5,100,H/2,260);
+  l.addColorStop(0,'rgba(0,240,255,.95)'); l.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=l; c.fillRect(0,20,420,H-40);
+  // 右侧流金补光
+  const r=c.createRadialGradient(W-100,H/2,5,W-100,H/2,240);
+  r.addColorStop(0,'rgba(255,172,46,.92)'); r.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=r; c.fillRect(W-420,20,420,H-40);
+  // 底部冷地面反射
+  const b=c.createLinearGradient(0,H*.68,0,H);
+  b.addColorStop(0,'rgba(0,0,0,0)'); b.addColorStop(1,'rgba(0,30,70,.22)');
+  c.fillStyle=b; c.fillRect(0,H*.68,W,H*.32);
+
+  const tx=new THREE.CanvasTexture(cv);
+  tx.mapping=THREE.EquirectangularReflectionMapping;
+  scene.environment=pm.fromEquirectangular(tx).texture;
+  scene.environmentIntensity=1.0;
+  pm.dispose();
+})();
+
+/* ════════════════════════════════════════════════════════════
+   §7  POST-PROCESSING CHAIN
+════════════════════════════════════════════════════════════ */
+const comp=new EffectComposer(renderer);
+comp.addPass(new RenderPass(scene,camera));
+
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),1.8,.60,.18);
+comp.addPass(bloom);
+
+const FilmShader={
+  uniforms:{tDiffuse:{value:null},uTime:{value:0},uCA:{value:.003},uGrain:{value:.048},uVig:{value:.40}},
+  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`
+    uniform sampler2D tDiffuse;uniform float uTime,uCA,uGrain,uVig;varying vec2 vUv;
+    float rnd(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+    void main(){
+      vec2 uv=vUv,d=uv-.5;float dist=length(d);
+      vec2 of=normalize(d)*dist*dist*uCA;
+      float r=texture2D(tDiffuse,uv-of*1.05).r;
+      float gch=texture2D(tDiffuse,uv).g;
+      float b=texture2D(tDiffuse,uv+of*.95).b;
+      vec3 col=vec3(r,gch,b);
+      col+=(rnd(uv+fract(uTime*29.3))-.5)*uGrain;
+      col*=1.-smoothstep(.38,1.28,dist*uVig*2.);
+      gl_FragColor=vec4(col,1.);
+    }`
+};
+const film=new ShaderPass(FilmShader);
+comp.addPass(film);
+
+/* ════════════════════════════════════════════════════════════
+   §8  LIGHTS
+════════════════════════════════════════════════════════════ */
+const coreLight=new THREE.PointLight(0x00f0ff,5.5,45,1.5);
+coreLight.position.set(0,0,0);
+scene.add(coreLight);
+
+const rimLight=new THREE.DirectionalLight(0xffffff,2.8);
+rimLight.position.set(-10,14,-8);
+rimLight.castShadow=true;
+rimLight.shadow.mapSize.set(1024,1024);
+scene.add(rimLight);
+
+const goldLight=new THREE.DirectionalLight(0xffaa33,1.4);
+goldLight.position.set(12,-6,6);
+scene.add(goldLight);
+
+const hemi=new THREE.HemisphereLight(0x020510,0x000000,.35);
+scene.add(hemi);
+
+// 第三幕辅助点光（重构美感）
+const aux=new THREE.PointLight(0xffaa22,0,30,1.8);
+aux.position.set(0,3,0);
+scene.add(aux);
+
+/* ════════════════════════════════════════════════════════════
+   §9  BACKGROUND — 3 层深度星云
+════════════════════════════════════════════════════════════ */
+function makePts(count,rMin,rMax,size,col,opa){
+  const g=new THREE.BufferGeometry(),p=new Float32Array(count*3);
+  for(let i=0;i<count;i++){
+    const phi=Math.acos(2*Math.random()-1),th=Math.random()*Math.PI*2;
+    const r=rMin+Math.random()*(rMax-rMin);
+    p[i*3]=r*Math.sin(phi)*Math.cos(th);
+    p[i*3+1]=r*Math.sin(phi)*Math.sin(th);
+    p[i*3+2]=r*Math.cos(phi);
+  }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  const m=new THREE.PointsMaterial({color:col,size,transparent:true,opacity:opa,blending:THREE.AdditiveBlending,depthWrite:false});
+  return new THREE.Points(g,m);
+}
+// 远景星辰
+const stars=makePts(3200,85,130,.13,0xffffff,.55);
+scene.add(stars);
+// 中景蓝色星云
+const nebula=makePts(900,28,55,.09,0x88ccff,.28);
+scene.add(nebula);
+// 近景金色尘埃
+const dust=makePts(500,14,30,.07,0xffbb44,.22);
+scene.add(dust);
+
+/* ════════════════════════════════════════════════════════════
+   §10  PLASMA CORE SHADER — 自定义等离子体球
+════════════════════════════════════════════════════════════ */
+const plasmaVS=`
+  uniform float uT;uniform float uStr;
+  varying vec3 vN;varying vec3 vWP;varying float vNs;
+  float h(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+  float ns(vec3 x){
+    vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
+    return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);
+  }
+  float fbm(vec3 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*ns(p);p=p*2.1+vec3(1.7,9.2,8.3);a*=.5;}return v;}
+  void main(){
+    float n=fbm(position*2.2+uT*.38)+fbm(position*4.4-uT*.22)*.35;
+    vNs=n;
+    vec3 disp=position+normal*n*uStr;
+    vN=normalize(normalMatrix*normal);
+    vWP=(modelMatrix*vec4(disp,1.)).xyz;
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(disp,1.);
+  }
+`;
+const plasmaFS=`
+  uniform float uT,uInt;uniform vec3 uCA,uCB,uCC;
+  varying vec3 vN;varying vec3 vWP;varying float vNs;
+  void main(){
+    vec3 vd=normalize(cameraPosition-vWP);
+    float fr=pow(1.-max(dot(vd,vN),0.),2.8);
+    vec3 col=mix(uCA,uCB,vNs);
+    col=mix(col,uCC,fr*.75);
+    float pulse=1.+sin(uT*2.6)*.18;
+    gl_FragColor=vec4(col*uInt*pulse,1.);
+  }
+`;
+const plasmaUniforms={
+  uT:{value:0},uStr:{value:.18},uInt:{value:3.8},
+  uCA:{value:new THREE.Color(0x00e8ff)},
+  uCB:{value:new THREE.Color(0x0028ff)},
+  uCC:{value:new THREE.Color(0xffffff)},
+};
+const plasmaMat=new THREE.ShaderMaterial({vertexShader:plasmaVS,fragmentShader:plasmaFS,uniforms:plasmaUniforms});
+
+/* ════════════════════════════════════════════════════════════
+   §11  ACCRETION DISK — 彩色分层粒子吸积盘
+════════════════════════════════════════════════════════════ */
+const DISC_N=2400;
+const discGeo=new THREE.BufferGeometry();
+const discPos=new Float32Array(DISC_N*3);
+const discCol=new Float32Array(DISC_N*3);
+const discMeta=[];
+{
+  const C1=new THREE.Color(0x00f0ff),C2=new THREE.Color(0xffaa22),C3=new THREE.Color(0xff3300),tmp=new THREE.Color();
+  for(let i=0;i<DISC_N;i++){
+    const ang=Math.random()*Math.PI*2;
+    const r=1.8+Math.random()*9.5;
+    const y=(Math.random()-.5)*(1.2/(r*.18+1));
+    discPos[i*3]=Math.cos(ang)*r; discPos[i*3+1]=y; discPos[i*3+2]=Math.sin(ang)*r;
+    // 内层青蓝 → 中层金 → 外层红橙
+    const t=Math.min(1,(r-1.8)/9.5);
+    t<.5?tmp.lerpColors(C1,C2,t*2):tmp.lerpColors(C2,C3,(t-.5)*2);
+    discCol[i*3]=tmp.r; discCol[i*3+1]=tmp.g; discCol[i*3+2]=tmp.b;
+    discMeta.push({ang,r,spd:(1.1+Math.random()*1.8)/(r+.1),y,
+      bv:new THREE.Vector3((Math.random()-.5)*20,(Math.random()-.5)*15,(Math.random()-.5)*20)});
+  }
+}
+discGeo.setAttribute('position',new THREE.BufferAttribute(discPos,3));
+discGeo.setAttribute('color',new THREE.BufferAttribute(discCol,3));
+const discMat=new THREE.PointsMaterial({size:.06,vertexColors:true,transparent:true,opacity:.78,blending:THREE.AdditiveBlending,depthWrite:false});
+const disc=new THREE.Points(discGeo,discMat);
+scene.add(disc);
+
+// 第二层：稀疏外围星云粒子（静态，仅用于背景填充）
+const OUTER_N=600;
+const outGeo=new THREE.BufferGeometry();
+const outPos=new Float32Array(OUTER_N*3);
+for(let i=0;i<OUTER_N;i++){
+  const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+  const r=10+Math.random()*8;
+  outPos[i*3]=r*Math.sin(ph)*Math.cos(th);
+  outPos[i*3+1]=r*Math.sin(ph)*Math.sin(th)*(Math.random()*.4+.2);
+  outPos[i*3+2]=r*Math.cos(ph);
+}
+outGeo.setAttribute('position',new THREE.BufferAttribute(outPos,3));
+const outMat=new THREE.PointsMaterial({color:0x224466,size:.045,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false});
+scene.add(new THREE.Points(outGeo,outMat));
+
+/* ════════════════════════════════════════════════════════════
+   §12  SHOCKWAVE RINGS + GOD RAYS
+════════════════════════════════════════════════════════════ */
+function mkRing(col){
+  const m=new THREE.Mesh(new THREE.RingGeometry(.08,.38,80),
+    new THREE.MeshBasicMaterial({color:col,side:THREE.DoubleSide,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+  m.rotation.x=Math.PI/2; scene.add(m); return m;
+}
+const sw1=mkRing(0x00f0ff),sw2=mkRing(0xffaa22),sw3=mkRing(0xffffff);
+
+const rayGrp=new THREE.Group(); scene.add(rayGrp);
+const rayMat=new THREE.MeshBasicMaterial({color:0x00f0ff,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,depthWrite:false});
+for(let i=0;i<12;i++){
+  const r=new THREE.Mesh(new THREE.ConeGeometry(.08,24,12,1,true),rayMat);
+  r.rotation.z=(i/12)*Math.PI*2; r.rotation.x=Math.PI/2;
+  rayGrp.add(r);
+}
+
+/* ════════════════════════════════════════════════════════════
+   §13  ENERGY TENDRILS — 破茧后的等离子触须
+════════════════════════════════════════════════════════════ */
+const tendrilGrp=new THREE.Group(); scene.add(tendrilGrp);
+const tMat=new THREE.MeshBasicMaterial({color:0x00d8ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+for(let i=0;i<8;i++){
+  const pts=[];
+  const baseAngle=(i/8)*Math.PI*2;
+  for(let j=0;j<=24;j++){
+    const t2=j/24;
+    const spiral=baseAngle+t2*Math.PI*2.2+Math.sin(t2*5+i)*0.4;
+    const r=t2*5.5;
+    pts.push(new THREE.Vector3(Math.cos(spiral)*r, Math.sin(t2*Math.PI*3.5+i)*0.9*(1-t2*.5), Math.sin(spiral)*r));
+  }
+  const tube=new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,.018,5,false),
+    tMat.clone()
+  );
+  tendrilGrp.add(tube);
+}
+
+/* ════════════════════════════════════════════════════════════
+   §14  PROCEDURAL SCENE ASSETS
+════════════════════════════════════════════════════════════ */
+let cageGrp=null, sacredGrp=null, singCore=null;
+let astroRings=[], shards=[], pillarGrp=null, pillarMat=null;
+let gltfRoot=null, mixer=null;
+
+function buildScene(){
+
+  /* ── 14a  第一幕：黑曜石囚笼 ── */
+  cageGrp=new THREE.Group(); scene.add(cageGrp);
+
+  // 外层线框（高频微颤红色脉冲）
+  cageGrp.add(new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.35,2),
+    new THREE.MeshStandardMaterial({color:0x050810,emissive:new THREE.Color(0x660011),emissiveIntensity:.4,wireframe:true,envMapIntensity:1.5})
+  ));
+  // 内层半透明黑曜石
+  cageGrp.add(new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.12,1),
+    new THREE.MeshPhysicalMaterial({color:0x080c16,roughness:.16,metalness:.1,transmission:.42,thickness:3.2,ior:1.68,envMapIntensity:2.2,transparent:true,opacity:.5})
+  ));
+  // 内壁能量丝（小wireframe）
+  cageGrp.add(new THREE.Mesh(
+    new THREE.OctahedronGeometry(1.55,0),
+    new THREE.MeshStandardMaterial({color:0x000000,emissive:new THREE.Color(0x660022),emissiveIntensity:.8,wireframe:true})
+  ));
+
+  /* ── 14b  神圣核心（初始隐藏，8s破茧展开） ── */
+  sacredGrp=new THREE.Group(); sacredGrp.scale.set(.001,.001,.001); scene.add(sacredGrp);
+
+  // 等离子核心球（自定义shader）
+  singCore=new THREE.Mesh(new THREE.SphereGeometry(1.15,96,96),plasmaMat);
+  sacredGrp.add(singCore);
+  // 纯白内芯
+  sacredGrp.add(new THREE.Mesh(new THREE.SphereGeometry(.72,32,32),new THREE.MeshBasicMaterial({color:0xffffff})));
+  // 内发光晕
+  sacredGrp.add(new THREE.Mesh(new THREE.SphereGeometry(1.35,32,32),new THREE.MeshBasicMaterial({color:0x00a0c0,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide})));
+
+  // 天球仪三轴星环
+  [{r:1.85,tube:.024,col:0x00f0ff,rx:.016,ry:.013},
+   {r:2.35,tube:.020,col:0xffaa22,rx:-.013,ry:.018},
+   {r:2.82,tube:.018,col:0xffffff,rx:.019,ry:-.016}
+  ].forEach(spec=>{
+    const ring=new THREE.Mesh(
+      new THREE.TorusGeometry(spec.r,spec.tube,16,150),
+      new THREE.MeshStandardMaterial({color:0x0b0d14,emissive:new THREE.Color(spec.col),emissiveIntensity:1.8,metalness:.98,roughness:.12,envMapIntensity:3.2})
+    );
+    ring.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,0);
+    ring.userData={rx:spec.rx,ry:spec.ry};
+    astroRings.push(ring); sacredGrp.add(ring);
+  });
+
+  /* ── 14c  300 块多形态晶体碎片 ── */
+  const SHARD_N=300;
+  const GEOS=[
+    new THREE.DodecahedronGeometry(.20,0),
+    new THREE.OctahedronGeometry(.24,0),
+    new THREE.TetrahedronGeometry(.28,0),
+  ];
+  const MAT_OBS=new THREE.MeshPhysicalMaterial({color:0x04060b,roughness:.07,metalness:.1,transmission:.90,thickness:1.8,ior:1.60,envMapIntensity:4.0});
+  const MAT_KIN=new THREE.MeshStandardMaterial({color:0x0e0900,emissive:new THREE.Color(0xffaa22),emissiveIntensity:3.8,metalness:.97,roughness:.13,envMapIntensity:2.8});
+  const MAT_CYN=new THREE.MeshStandardMaterial({color:0x000e14,emissive:new THREE.Color(0x00f0ff),emissiveIntensity:2.6,metalness:.92,roughness:.18,envMapIntensity:2.5});
+
+  for(let i=0;i<SHARD_N;i++){
+    const geo=GEOS[i%3];
+    const matType=i%5===0?MAT_KIN:i%7===0?MAT_CYN:MAT_OBS;
+    const s=new THREE.Mesh(geo,matType.clone());
+
+    const phi=Math.acos(-1+(2*i)/SHARD_N),th=Math.sqrt(SHARD_N*Math.PI)*phi;
+    const ri=1.92+Math.random()*.38;
+    const x=ri*Math.cos(th)*Math.sin(phi),y=ri*Math.sin(th)*Math.sin(phi),z=ri*Math.cos(phi);
+    s.position.set(x,y,z);
+    s.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    const sc=.45+Math.random()*.9;
+    s.scale.set(sc,sc*(1+Math.random()*.85),sc);
+    s.castShadow=true;
+
+    const dir=new THREE.Vector3(x,y,z).normalize();
+    const trk=i%2, mR=trk===0?(3.0+Math.random()*.7):(5.2+Math.random()*1.0);
+    const mA=(i/SHARD_N)*Math.PI*4.2;
+
+    s.userData={
+      origin:new THREE.Vector3(x,y,z),
+      bv:dir.clone().multiplyScalar(7.+Math.random()*9.),
+      spin:new THREE.Vector3((Math.random()-.5)*5,(Math.random()-.5)*5,(Math.random()-.5)*5),
+      snap:new THREE.Vector3(),
+      mR,mA,mSpd:(trk===0?.016:-.011)*(0.8+Math.random()*.4),mY:(Math.random()-.5)*.6,
+    };
+    shards.push(s);
+    cageGrp.add(s); // 初始在囚笼组，爆裂后移到 scene
+  }
+
+  /* ── 14d  第四幕：上升光柱 ── */
+  pillarGrp=new THREE.Group(); scene.add(pillarGrp);
+  pillarMat=new THREE.MeshBasicMaterial({color:0x00f0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+  const pilGeo=new THREE.CylinderGeometry(.012,.03,24,7,1,true);
+  for(let i=0;i<48;i++){
+    const p=new THREE.Mesh(pilGeo,pillarMat);
+    const a=(i/48)*Math.PI*2, r=1.8+Math.random()*4.5;
+    p.position.set(Math.cos(a)*r,-7+Math.random()*9,Math.sin(a)*r);
+    p.userData.spd=.042+Math.random()*.065;
+    pillarGrp.add(p);
+  }
+}
+buildScene();
+
+/* ════════════════════════════════════════════════════════════
+   §15  GLTF 加载 — 优先 zen_core.glb，失败走程序化
+════════════════════════════════════════════════════════════ */
+(function loadGLTF(){
+  const draco=new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
+  const loader=new GLTFLoader(); loader.setDRACOLoader(draco);
+  loader.load('zen_core.glb',gltf=>{
+    gltfRoot=gltf.scene; scene.add(gltfRoot);
+    gltfRoot.traverse(c=>{
+      if(!c.isMesh)return;
+      c.castShadow=c.receiveShadow=true;
+      if(c.material){c.material.envMapIntensity=2.8;c.material.needsUpdate=true;}
+    });
+    if(gltf.animations?.length){
+      mixer=new THREE.AnimationMixer(gltfRoot);
+      gltf.animations.forEach(cl=>mixer.clipAction(cl).setLoop(THREE.LoopRepeat).play());
+    }
+    el.stat.textContent='GLB: zen_core.glb (ACTIVE)';
+    // 隐藏程序化资产
+    if(cageGrp){ scene.remove(cageGrp); cageGrp=null; }
+    sacredGrp.visible=false;
+  },undefined,()=>{ el.stat.textContent='PIPELINE: KINTSUGI CORE (PROCEDURAL)'; });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   §16  DIRECTOR — 四幕叙事调度引擎
+════════════════════════════════════════════════════════════ */
+let recoil=0;
+const camBase=new THREE.Vector3();
+
+function setAct(a){
+  if(a===prevAct)return; prevAct=a;
+  document.querySelectorAll('.sd').forEach((d,i)=>d.classList.toggle('act',i===a));
+}
+function narr(act,title,desc,show){
+  el.na.textContent=act; el.nt.textContent=title; el.nd.textContent=desc;
+  el.narr.classList.toggle('on',show);
+}
+
+function direct(t){
+  // HUD 更新
+  const s=Math.min(t,30).toFixed(2).padStart(5,'0');
+  el.tc.textContent=`${s} / 30.00`;
+  el.prog.style.setProperty('--p',`${(t/TL.TOTAL)*100}%`);
+
+  /* ─────────────────────────────────────────────
+     ACT I  执 · 囚笼   0 ~ 7.82s
+  ───────────────────────────────────────────── */
+  if(t<TL.A1_END){
+    setAct(0);
+    const p=t/TL.A1_END;
+    // 摄像机缓慢逼近 + 轻微横向漂移 + 呼吸式FOV
+    camera.position.z=16-Math.pow(p,1.55)*8.5;
+    camera.position.y=.6-p*.3+Math.sin(t*.9)*.12;
+    camera.position.x=Math.sin(t*.34)*.45;
+    camera.fov=36-p*3; camera.updateProjectionMatrix();
+    // 囚笼扭动与红光急促脉搏
+    if(cageGrp){
+      cageGrp.rotation.y+=.013+p*.024;
+      cageGrp.rotation.x+=.008+p*.016;
+      cageGrp.rotation.z+=.004+p*.008;
+      cageGrp.children[0].material.emissiveIntensity=.3+Math.sin(t*(3.5+p*11))*(0.22+p*.9);
+      cageGrp.children[2].material.emissiveIntensity=.6+Math.sin(t*(6+p*14))*(0.3+p*1.2);
+    }
+    bloom.strength=1.7+Math.sin(t*2.2)*.28;
+    film.uniforms.uCA.value=.002+p*.0045;
+
+    const show=t>1.2&&t<6.5;
+    narr('ACT I · THE COCOON','执 · 囚 笼','万物附骨 · 禁锢重压 · 窒息坍缩',show);
+    if(show) el.prose.textContent='执念如囚 · 杂质繁冗 · 压制神明';
+  }
+
+  /* ─────────────────────────────────────────────
+     VACUUM  7.82 ~ 8.00s
+  ───────────────────────────────────────────── */
+  if(t>=TL.A1_END&&t<TL.VAC&&!TR.vac){
+    TR.vac=true; audio.vacuum();
+    bloom.strength=.4; coreLight.intensity=.8;
+    film.uniforms.uCA.value=.0008;
+    el.narr.classList.remove('on');
+  }
+
+  /* ─────────────────────────────────────────────
+     ACT II  断 · 爆裂   8 ~ 13s
+  ───────────────────────────────────────────── */
+  if(t>=TL.A2S&&!TR.burst){
+    TR.burst=true; setAct(1);
+    audio.burst();
+    el.flash.style.transition='opacity .04s ease-out';
+    el.flash.style.opacity='1';
+    setTimeout(()=>{ el.flash.style.transition='opacity .55s ease-out'; el.flash.style.opacity='0'; },55);
+    // 隐藏囚笼实体（碎片留在原位继续飞）
+    if(cageGrp){
+      cageGrp.children[0].visible=false;
+      cageGrp.children[1].visible=false;
+      cageGrp.children[2].visible=false;
+    }
+    // 将碎片从 cageGrp 转移到 scene，保持世界坐标
+    shards.forEach(s=>{
+      cageGrp&&cageGrp.remove(s);
+      scene.add(s);
+    });
+    bloom.strength=7.5; coreLight.intensity=35; coreLight.color.set(0xffffff);
+    film.uniforms.uCA.value=.048;
+    el.stk.classList.add('on');
+    recoil=.65;
+    camera.fov=36; camera.updateProjectionMatrix();
+    // 激活触须
+    tendrilGrp.children.forEach(t2=>{ t2.material.opacity=0; });
+  }
+
+  if(t>=TL.A2S&&t<TL.A2E){
+    setAct(1);
+    const bT=t-TL.A2S; // 0~5s
+
+    // 核心展开
+    if(sacredGrp){
+      const sc=Math.min(1,bT*1.4); sacredGrp.scale.set(sc,sc,sc);
+    }
+    coreLight.color.lerpColors(new THREE.Color(0xffffff),new THREE.Color(0x00f0ff),Math.min(1,bT/2.8));
+
+    // 激波三环
+    [sw1,sw2,sw3].forEach((r,i)=>{
+      const spd=[5.8,4.2,3.0][i]; const dur=[1.5,2.0,2.6][i];
+      r.scale.set(bT*spd,bT*spd,1);
+      r.material.opacity=Math.max(0,1.-bT/dur);
+    });
+
+    // 体积光柱淡入
+    rayMat.opacity=Math.min(.11,bT*.06);
+    rayGrp.rotation.y+=.01;
+
+    // 触须渐现
+    if(bT>0.5){
+      const to=Math.min(.55,(bT-.5)*.25);
+      tendrilGrp.children.forEach(m=>m.material.opacity=to);
+    }
+
+    // 镜头后撤 + 仰角 + 环绕
+    camera.position.z=7.5+bT*.85;
+    camera.position.y=.2+bT*.32;
+    camera.position.x=Math.sin(bT*.6)*2.2;
+
+    bloom.strength=THREE.MathUtils.lerp(bloom.strength,2.4,.05);
+    film.uniforms.uCA.value=THREE.MathUtils.lerp(film.uniforms.uCA.value,.003,.04);
+
+    // 碎片向外飞散（保存快照）
+    shards.forEach(s=>{
+      const v=s.userData.bv,sp=s.userData.spin;
+      s.position.x=s.userData.origin.x+v.x*bT;
+      s.position.y=s.userData.origin.y+v.y*bT;
+      s.position.z=s.userData.origin.z+v.z*bT;
+      s.userData.snap.copy(s.position);
+      s.rotation.x+=sp.x*.013; s.rotation.y+=sp.y*.013; s.rotation.z+=sp.z*.013;
+    });
+
+    const show=bT>.8&&bT<4.;
+    narr('ACT II · THE SHATTERING','断 · 爆 裂','一念舍弃 · 囚笼崩解 · 神明破茧',show);
+    if(show) el.prose.textContent='破执碎壳 · 初露真容 · 舍尽杂相';
+  }
+
+  /* ─────────────────────────────────────────────
+     ACT III  舍 · 曼陀罗重构   13 ~ 21s
+  ───────────────────────────────────────────── */
+  if(t>=TL.A3S&&!TR.reorg){
+    TR.reorg=true; setAct(2);
+    audio.act3();
+    el.flash.style.background='radial-gradient(ellipse at 50% 50%,#ffe890 0%,#00f0ff 40%,rgba(0,0,0,0) 78%)';
+    el.flash.style.transition='opacity .1s ease-out';
+    el.flash.style.opacity='.4';
+    setTimeout(()=>{ el.flash.style.transition='opacity .55s ease-out'; el.flash.style.opacity='0'; },130);
+    bloom.strength=3.2; coreLight.intensity=9.;
+    el.stk.classList.remove('on');
+    aux.intensity=3.5;
+    // 触须颜色变金
+    tendrilGrp.children.forEach(m=>m.material.color.set(0xffbb33));
+  }
+
+  if(t>=TL.A3S&&t<TL.A3E){
+    setAct(2);
+    const rT=t-TL.A3S;
+    const rP=Math.min(1,rT/4.); // 4s完成入轨
+
+    bloom.strength=THREE.MathUtils.lerp(bloom.strength,1.95,.03);
+    aux.intensity=THREE.MathUtils.lerp(aux.intensity,2.2,.02);
+
+    // 大弧度升降臂环绕（穿越星环的crane shot）
+    const oa=(rT/8.)*Math.PI*.72;
+    camera.position.x=Math.sin(oa)*7.8;
+    camera.position.z=Math.cos(oa)*7.8;
+    camera.position.y=1.2+Math.sin(rT*.42)*1.3;
+    camera.fov=THREE.MathUtils.lerp(camera.fov,40,.015);
+    camera.updateProjectionMatrix();
+
+    // 天球仪加速自转
+    astroRings.forEach(r=>{ r.rotation.x+=r.userData.rx*2.1; r.rotation.y+=r.userData.ry*2.1; });
+
+    // 触须旋转
+    tendrilGrp.rotation.y+=.015;
+    tendrilGrp.children.forEach(m=>m.material.opacity=THREE.MathUtils.lerp(m.material.opacity,.4,.04));
+
+    // 碎片吸附入曼陀罗轨道
+    shards.forEach(s=>{
+      s.userData.mA+=s.userData.mSpd;
+      const tx=Math.cos(s.userData.mA)*s.userData.mR;
+      const tz=Math.sin(s.userData.mA)*s.userData.mR;
+      const ty=s.userData.mY;
+      s.position.x=THREE.MathUtils.lerp(s.userData.snap.x,tx,rP);
+      s.position.y=THREE.MathUtils.lerp(s.userData.snap.y,ty,rP);
+      s.position.z=THREE.MathUtils.lerp(s.userData.snap.z,tz,rP);
+      s.rotation.y+=.016;
+    });
+
+    const show=rT>.7&&rT<6.5;
+    narr('ACT III · THE MANDALA','舍 · 重 构','碎而生序 · 杂相归位 · 曼陀罗星轨',show);
+    if(show) el.prose.textContent='舍其纷扰 · 聚散有序 · 万物各得其位';
+  }
+
+  /* ─────────────────────────────────────────────
+     ACT IV  离 · 升华归虚   21 ~ 30s
+  ───────────────────────────────────────────── */
+  if(t>=TL.A4S&&!TR.diss){
+    TR.diss=true; setAct(3);
+    audio.act4();
+    bloom.strength=5.;
+    el.lb1.classList.add('wide'); el.lb2.classList.add('wide');
+    coreLight.intensity=6.;
+    // 触须缓慢消隐
+    tendrilGrp.children.forEach(m=>m.material.color.set(0xffffff));
+    aux.intensity=0;
+    plasmaUniforms.uCA.value.set(0xffffff);
+    plasmaUniforms.uCB.value.set(0xaaddff);
+    plasmaUniforms.uCC.value.set(0xffffff);
+  }
+
+  if(t>=TL.A4S){
+    setAct(3);
+    const dT=t-TL.A4S;
+
+    // 光柱点亮
+    if(pillarMat) pillarMat.opacity=Math.min(.42,dT*.12);
+    pillarGrp?.children.forEach(p=>{ p.position.y+=p.userData.spd; if(p.position.y>14) p.position.y=-8; });
+
+    // 触须渐消
+    tendrilGrp.children.forEach(m=>m.material.opacity=Math.max(0,m.material.opacity*.985));
+
+    // 镜头仰望天顶，缓慢上升
+    camera.position.z=6.8+dT*.3;
+    camera.position.y=2.+dT*.18;
+    camera.position.x=Math.sin(dT*.26)*1.8;
+    camera.fov=THREE.MathUtils.lerp(camera.fov,50,.01);
+    camera.updateProjectionMatrix();
+
+    // 碎片消融上升
+    shards.forEach(s=>{ s.position.y+=.052; const sc=Math.max(.001,s.scale.x*.988); s.scale.set(sc,sc,sc); });
+    // 核心收敛
+    if(sacredGrp){ const sc=Math.max(.001,1.-dT*.14); sacredGrp.scale.set(sc,sc,sc); }
+    // 等离子脉动增强
+    plasmaUniforms.uInt.value=3.8+dT*.2;
+
+    bloom.strength=THREE.MathUtils.lerp(bloom.strength,3.2,.02);
+
+    const show=dT>.8&&dT<5.;
+    narr('ACT IV · TRANSCENDENCE','离 · 升 华','物我两忘 · 身心清朗 · 归于太虚',show);
+    if(show) el.prose.textContent='脱离形质 · 化作虚空 · 天地同流';
+
+    // 渐黑淡出
+    if(t>=TL.FADE){
+      const fp=(t-TL.FADE)/(TL.TOTAL-TL.FADE);
+      renderer.toneMappingExposure=Math.max(.001,1.3*(1-fp));
+      el.hud.style.opacity=`${1-fp}`;
+      el.narr.style.opacity=`${Math.max(0,1-(fp-.45)*2.2)}`;
+      if(fp>.75) audio.fade(3.);
+    }
+  }
+
+  /* ── 镜头震动 + 视差 ── */
+  if(recoil>.001){
+    camera.position.x+=(Math.random()-.5)*recoil;
+    camera.position.y+=(Math.random()-.5)*recoil*.7;
+    recoil*=.86;
+  }
+  mx.x+=( mx.tx-mx.x)*.05; mx.y+=(mx.ty-mx.y)*.05;
+  camera.position.x+=mx.x*.28; camera.position.y+=mx.y*.20;
+  camera.lookAt(0,0,0);
+}
+
+/* ════════════════════════════════════════════════════════════
+   §17  RENDER LOOP
+════════════════════════════════════════════════════════════ */
+const clock=new THREE.Clock();
+
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=clock.getDelta(), el2=clock.getElapsedTime();
+
+  // 后处理 uniform
+  film.uniforms.uTime.value=el2;
+  plasmaUniforms.uT.value=el2;
+
+  // AnimationMixer
+  if(mixer) mixer.update(dt);
+
+  // 核心光呼吸
+  coreLight.intensity=coreLight.intensity*(1+(Math.sin(el2*1.6)*.02));
+
+  // 等离子球自转
+  if(singCore) singCore.rotation.y+=.006;
+
+  // 天球仪持续微转（待机时）
+  astroRings.forEach(r=>{ r.rotation.y+=.004; });
+
+  // 体积光柱旋转
+  rayGrp.rotation.y=el2*.07;
+
+  // 星云层慢速旋转
+  nebula.rotation.y=el2*.006;
+  dust.rotation.y=-el2*.008;
+  stars.rotation.y=el2*.001;
+
+  // VU 律动
+  const vuT=playing?(el2*3.5):0;
+  vuB.forEach((b,i)=>{
+    const h=playing?3+Math.abs(Math.sin(vuT*(1+i*.4)+i))*(10+Math.sin(el2*2+i)*3):3;
+    b.style.height=`${h}px`;
+  });
+
+  /* ── 粒子动力学 ── */
+  const pa=disc.geometry.attributes.position.array;
+  const isBurst=playing&&(performance.now()-t0)/1000>=TL.A2S;
+  const isDiss =playing&&(performance.now()-t0)/1000>=TL.A4S;
+
+  for(let i=0;i<DISC_N;i++){
+    const m=discMeta[i];
+    if(!isBurst){
+      // 吸积盘旋涡坍缩
+      m.ang+=m.spd*.032;
+      m.r-=.0015; if(m.r<.55) m.r=10.;
+      pa[i*3]=Math.cos(m.ang)*m.r;
+      pa[i*3+1]=m.y+Math.sin(el2*1.6+m.ang)*.22;
+      pa[i*3+2]=Math.sin(m.ang)*m.r;
+    } else if(!isDiss){
+      // 超新星爆散
+      pa[i*3]+=m.bv.x*.013; pa[i*3+1]+=m.bv.y*.013; pa[i*3+2]+=m.bv.z*.013;
+    } else {
+      // 上升光雨
+      pa[i*3+1]+=.068; if(pa[i*3+1]>14) pa[i*3+1]=-8;
+    }
+  }
+  disc.geometry.attributes.position.needsUpdate=true;
+
+  // 时间轴调度
+  if(playing){
+    const t=(performance.now()-t0)/1000;
+    if(t<=TL.TOTAL){ direct(t); }
+    else if(!TR.epi){
+      TR.epi=true; playing=false;
+      el.epi.classList.add('on');
+      el.narr.classList.remove('on');
+      el.hud.style.opacity='0';
+    }
+  }
+
+  comp.render();
+}
+loop();
+
+/* ════════════════════════════════════════════════════════════
+   §18  LAUNCH / REPLAY
+════════════════════════════════════════════════════════════ */
+function launch(){
+  audio._boot(); audio.act1();
+  el.portal.classList.add('gone');
+  el.epi.classList.remove('on');
+  el.hud.classList.add('on');
+  el.sds.classList.add('on');
+  el.narr.style.opacity=''; el.hud.style.opacity='1';
+  el.flash.style.background='radial-gradient(ellipse at 50% 50%,#fff 0%,#a0f0ff 20%,#001830 60%,#000 100%)';
+
+  // 重置状态
+  Object.keys(TR).forEach(k=>TR[k]=false);
+  prevAct=-1; recoil=0;
+  bloom.strength=1.8; renderer.toneMappingExposure=1.3;
+  film.uniforms.uCA.value=.003;
+  coreLight.intensity=5.5; coreLight.color.set(0x00f0ff);
+  el.lb1.classList.remove('wide'); el.lb2.classList.remove('wide');
+  el.stk.classList.remove('on');
+  camera.position.set(0,.6,16); camera.fov=36; camera.updateProjectionMatrix();
+  aux.intensity=0;
+  plasmaUniforms.uCA.value.set(0x00e8ff);
+  plasmaUniforms.uCB.value.set(0x0028ff);
+  plasmaUniforms.uCC.value.set(0xffffff);
+  plasmaUniforms.uInt.value=3.8;
+
+  // 重置程序化资产
+  if(cageGrp){
+    cageGrp.rotation.set(0,0,0);
+    cageGrp.children.forEach(c=>c.visible=true);
+  }
+  if(sacredGrp) sacredGrp.scale.set(.001,.001,.001);
+  if(pillarMat) pillarMat.opacity=0;
+
+  // 碎片归位
+  shards.forEach(s=>{
+    cageGrp&&!cageGrp.children.includes(s)&&cageGrp.add(s);
+    s.position.copy(s.userData.origin);
+    const sc=.5; s.scale.set(sc,sc*(1+Math.random()*.8),sc);
+  });
+
+  // 触须归零
+  tendrilGrp.children.forEach(m=>{ m.material.opacity=0; m.material.color.set(0x00d8ff); });
+
+  // 激波环归零
+  [sw1,sw2,sw3].forEach(r=>{ r.scale.set(.001,.001,1); r.material.opacity=0; });
+
+  // 粒子复位
+  discMeta.forEach((m,i)=>{
+    const ang=Math.random()*Math.PI*2, r=1.8+Math.random()*9.5;
+    m.ang=ang; m.r=r; m.y=(Math.random()-.5)*(1.2/(r*.18+1));
+    discPos[i*3]=Math.cos(ang)*r; discPos[i*3+1]=m.y; discPos[i*3+2]=Math.sin(ang)*r;
+  });
+  disc.geometry.attributes.position.needsUpdate=true;
+
+  t0=performance.now(); playing=true;
+}
+
+g('btn-go').addEventListener('click',launch);
+g('btn-rp').addEventListener('click',launch);
+
+/* ════════════════════════════════════════════════════════════
+   §19  RESIZE
+════════════════════════════════════════════════════════════ */
+window.addEventListener('resize',()=>{
+  const w=innerWidth,h=innerHeight;
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+  renderer.setSize(w,h); comp.setSize(w,h); bloom.setSize(w,h);
+});
+</script>
+</body>
+</html>

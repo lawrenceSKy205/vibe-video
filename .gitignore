@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Video & Media Exports (prevent committing huge 4K files)
+*.webm
+*.mp4
+*.mov
+*.mkv
+
+# Temporary logs & test artifacts
+*.log
+scratch/
+test_*.js
+*.tmp
