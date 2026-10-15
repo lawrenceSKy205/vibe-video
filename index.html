@@ -1757,6 +1757,8 @@
        4K 原生画质逐帧 In-Canvas 录制字幕合成器
        仅在点击“导出 4K 视频”录制阶段被激活合成，屏幕正常播放完全走原版 DOM
        ------------------------------------------------------------ */
+    let isRecording4K = false;
+    let savedViewport = null;
     let hudCanvas4K = null;
     let hudCtx4K = null;
     let hudTexture4K = null;
@@ -2011,9 +2013,6 @@
     /* ------------------------------------------------------------
        13. 4K 超高清 (3840×2160) 视听同步一键导出引擎
        ------------------------------------------------------------ */
-    let isRecording4K = false;
-    let savedViewport = null;
-
     async function start4KRecording() {
       if (isRecording4K) return;
       isRecording4K = true;
